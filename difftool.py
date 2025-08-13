@@ -150,7 +150,7 @@ class GitDiffApp(tk.Tk):
             if branch1 == branch2:
                 raise ValueError("異なるブランチを選択してください")
             # 現在のブランチを取得
-            self.current_branch = self._get_current_branch() 
+            # self.current_branch = self._get_current_branch() 
 
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.diff_dir = os.path.join(self.output_path, now)
