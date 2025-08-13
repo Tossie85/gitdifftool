@@ -167,12 +167,15 @@ class GitDiffApp(tk.Tk):
                 self.log(diff_result)
             self.log(f"差分ファイル出力: {diff_file}")
 
-            # TODO: ブランチ切り替えを行わずに、git show branch_name:file_path > output_file_path で取得できるように対応を検討中
-            self.checkout_and_copy(branch1, diff_file)
-            self.checkout_and_copy(branch2, diff_file)
-
-            # TODO: 元のブランチに戻す
-            subprocess.run(["git", "switch", self.current_branch], cwd=self.repo_path)
+            # ブランチを切り替えてファイルをコピーする
+            # self.checkout_and_copy(branch1, diff_file)
+            # self.checkout_and_copy(branch2, diff_file)
+            # 元のブランチに戻す
+            # subprocess.run(["git", "switch", self.current_branch], cwd=self.repo_path)
+            
+            # ブランチを切り替えずにブランチからファイルをコピーする
+            self.file_copy_from_branch(branch1, diff_file)
+            self.file_copy_from_branch(branch2, diff_file)
 
             self.log("完了しました")
             if messagebox.askyesno("完了", f"作業フォルダを開きますか？\n{self.diff_dir}"):
@@ -180,6 +183,32 @@ class GitDiffApp(tk.Tk):
         except Exception as e:
             messagebox.showerror("エラー", str(e))
             self.log(f"実行エラー: {e}")
+
+    def file_copy_from_branch(self, branch, diff_file):
+        """
+        ブランチを切り替えずに差分ファイル記載のファイルをブランチからコピー
+        """
+        safe_branch = re.sub(r'[^\w.-]', '-', branch)
+        branch_dir = os.path.join(self.diff_dir, safe_branch)
+        os.makedirs(branch_dir, exist_ok=True)
+
+        with open(diff_file, encoding='utf-8') as f:
+            for line in f:
+                rel_path = line.strip()
+                branch_src = f"{branch}:{rel_path}"
+                dest = os.path.join(branch_dir, rel_path)
+
+                try:
+                    # ブランチに指定のファイルが存在しているか確認
+                    ret = (subprocess.run(["git", "ls-tree", "--name-only", branch, "--", rel_path], cwd=self.repo_path, capture_output=True, text=True).stdout or "").strip()
+                    if ret == rel_path:
+                        os.makedirs(os.path.dirname(dest), exist_ok=True)
+                        subprocess.run(["git", "show", branch_src], cwd=self.repo_path, text=True, stdout=open(dest, "w"))
+                        self.log(f"{branch}: コピー成功 - {rel_path}")
+                    else:
+                        self.log(f"{branch}: スキップ - {rel_path} (存在しません)")
+                except Exception as e:
+                    self.log(f"{branch}: コピー失敗 - {rel_path} ({e})")
 
     def checkout_and_copy(self, branch, diff_file):
         """
