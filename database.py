@@ -20,10 +20,10 @@ CREATE_TB_WORKSPACE = f"""
     );
 """
 # ブランチテーブルのテーブル名
-TB_BRABCHES = "r_branches"
+TB_BRANCHES = "r_branches"
 # ブランチテーブルの作成SQL
-CREATE_TB_BRABCHES = f"""
-    CREATE TABLE IF NOT EXISTS {TB_BRABCHES} (
+CREATE_TB_BRANCHES = f"""
+    CREATE TABLE IF NOT EXISTS {TB_BRANCHES} (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         ws_name TEXT NOT NULL,
         branch_name TEXT NOT NULL,
@@ -53,27 +53,16 @@ class Database():
     """
     def __init__(self):
         super().__init__()
-        self.db_name = ''
-        # DB情報の設定を読み込む
-        self.load_settings()
+        self.db_name = 'git_tool.db'
         # DBを初期化する
         self.db_init()
     
     def get_db_name(self):
         return self.db_name
-
-    def load_settings(self):
-        if os.path.exists(DB_CONFIG):
-            try:
-                with open(DB_CONFIG, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                    self.db_name = config.get("db_name", '')
-            except Exception:
-                pass
     
     def db_init(self):
         self.create_table_if_not_exists(CREATE_TB_WORKSPACE)
-        self.create_table_if_not_exists(CREATE_TB_BRABCHES)
+        self.create_table_if_not_exists(CREATE_TB_BRANCHES)
         self.create_table_if_not_exists(CREATE_TB_USER_SETTINGS)
     
     def create_table_if_not_exists(self, create_table_sql):
@@ -96,7 +85,7 @@ class Database():
         try:
             # 現在のテーブルからブランチ情報を削除する
             delete_sql = f"""
-                DELETE FROM {TB_BRABCHES} WHERE ws_name = '{ws_name}';
+                DELETE FROM {TB_BRANCHES} WHERE ws_name = '{ws_name}';
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
@@ -110,7 +99,7 @@ class Database():
             # 最後のカンマだけ取り除く
             insert_values = insert_values[:-1]
             insert_sql = f"""
-                INSERT INTO {TB_BRABCHES} (ws_name, branch_name, created_dt, updated_dt) VALUES  
+                INSERT INTO {TB_BRANCHES} (ws_name, branch_name, created_dt, updated_dt) VALUES  
                 {insert_values};
             """
             cursor.execute(insert_sql)
