@@ -1,0 +1,1 @@
+pyinstaller .\gitdifftool.exe.spec
