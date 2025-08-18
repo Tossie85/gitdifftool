@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import threading
+import queue
+import time
 import os
 import shutil
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, scrolledtext
 from datetime import datetime
 import re
 import database
@@ -20,6 +23,10 @@ class GitDiffApp(tk.Tk):
         self.diff_dir = ''
         self.db_name = ''
         self.ws_name = ''
+        
+        # キュー（ログや進行状況をスレッドから受け取る）
+        self.log_queue = queue.Queue()
+
         # ウィジットの生成
         self.create_widgets()
         # ワークスペース選択モーダルの表示
@@ -28,6 +35,9 @@ class GitDiffApp(tk.Tk):
         self.db = database.Database()
         # 設定の読み込み
         self.load_settings()
+
+        # 定期的にキューを監視してログ更新
+        self.after(100, self.update_log)
 
     def load_settings(self):
         """
@@ -76,7 +86,10 @@ class GitDiffApp(tk.Tk):
 
         tk.Button(self, text="実行", command=self.execute).grid(row=2, column=3)
 
-        self.log_text = tk.Text(self, height=20)
+        # self.log_text = tk.Text(self, height=20)
+        # self.log_text.grid(row=3, column=0, columnspan=5, padx=5, pady=5)
+        # ログ表示（リアルタイム追記用）
+        self.log_text = scrolledtext.ScrolledText(self, width=60, height=20, state="disabled")
         self.log_text.grid(row=3, column=0, columnspan=5, padx=5, pady=5)
 
         tk.Button(self, text="ログクリア", command=self.clear_log).grid(row=4, column=3)
@@ -86,8 +99,21 @@ class GitDiffApp(tk.Tk):
         """
         ログを出力する
         """
+        # self.log_text.insert(tk.END, message + "\n")
+        # self.log_text.see(tk.END)
+        """UIスレッドから直接書き込み"""
+        self.log_text.config(state="normal")
         self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
+        self.log_text.yview(tk.END)
+        self.log_text.config(state="disabled")
+        self.log_text.update_idletasks()
+
+    def update_log(self):
+        """スレッドからのメッセージを処理"""
+        while not self.log_queue.empty():
+            message = self.log_queue.get()
+            self.log(message)
+        self.after(100, self.update_log)
 
     def select_git_folder(self):
         """
@@ -124,10 +150,12 @@ class GitDiffApp(tk.Tk):
             self.branch1_combo['values'] = self.branches
             self.branch2_combo['values'] = self.branches
             self.db.update_branches(self.ws_name,self.branches)
-            self.log("ブランチ一覧を更新しました")
+            self.log_queue.put("ブランチ一覧を更新しました")
+            # self.log("ブランチ一覧を更新しました")
         except Exception as e:
             messagebox.showerror("エラー", str(e))
-            self.log(f"ブランチ取得エラー: {e}")
+            self.log_queue.put(f"ブランチ取得エラー: {e}")
+            # self.log(f"ブランチ取得エラー: {e}")
 
     def execute(self):
         """
@@ -163,8 +191,10 @@ class GitDiffApp(tk.Tk):
             subprocess.run(["git", "diff", "--name-only", branch1, branch2], cwd=self.repo_path, text=True, stdout=open(diff_file, "w"))
             with open(diff_file,'r') as f:
                 diff_result = f.read()
-                self.log("差分一覧")
-                self.log(diff_result)
+                self.log_queue.put("差分一覧")
+                # self.log("差分一覧")
+                self.log_queue.put(diff_result)
+                # self.log(diff_result)
             self.log(f"差分ファイル出力: {diff_file}")
 
             # ブランチを切り替えてファイルをコピーする
@@ -173,16 +203,22 @@ class GitDiffApp(tk.Tk):
             # 元のブランチに戻す
             # subprocess.run(["git", "switch", self.current_branch], cwd=self.repo_path)
             
-            # ブランチを切り替えずにブランチからファイルをコピーする
-            self.file_copy_from_branch(branch1, diff_file)
-            self.file_copy_from_branch(branch2, diff_file)
+            thread1 = threading.Thread(target=self.file_copy_from_branch(branch1, diff_file))
+            thread1.start()
+            thread2 = threading.Thread(target=self.file_copy_from_branch(branch2, diff_file))
+            thread2.start()
 
-            self.log("完了しました")
+            # ブランチを切り替えずにブランチからファイルをコピーする
+            # self.file_copy_from_branch(branch1, diff_file)
+            # self.file_copy_from_branch(branch2, diff_file)
+            self.log_queue.put("完了しました")
+            # self.log("完了しました")
             if messagebox.askyesno("完了", f"作業フォルダを開きますか？\n{self.diff_dir}"):
                 os.startfile(self.diff_dir)
         except Exception as e:
             messagebox.showerror("エラー", str(e))
-            self.log(f"実行エラー: {e}")
+            self.log_queue.put(f"実行エラー: {e}")
+            # self.log(f"実行エラー: {e}")
 
     def file_copy_from_branch(self, branch, diff_file):
         """
@@ -204,11 +240,17 @@ class GitDiffApp(tk.Tk):
                     if ret == rel_path:
                         os.makedirs(os.path.dirname(dest), exist_ok=True)
                         subprocess.run(["git", "show", branch_src], cwd=self.repo_path, text=True, stdout=open(dest, "w"))
-                        self.log(f"{branch}: コピー成功 - {rel_path}")
+                        self.log_queue.put(f"{branch}: コピー成功 - {rel_path}")
+                        # self.log(f"{branch}: コピー成功 - {rel_path}")
                     else:
-                        self.log(f"{branch}: スキップ - {rel_path} (存在しません)")
+                        self.log_queue.put(f"{branch}: スキップ - {rel_path} (存在しません)")
+                        # self.log(f"{branch}: スキップ - {rel_path} (存在しません)")
                 except Exception as e:
-                    self.log(f"{branch}: コピー失敗 - {rel_path} ({e})")
+                    self.log_queue.put(f"{branch}: コピー失敗 - {rel_path} ({e})")
+                    # self.log(f"{branch}: コピー失敗 - {rel_path} ({e})")
+ 
+                time.sleep(0.05)  # 疑似的に遅延を入れて進行が見えるように
+
 
     def checkout_and_copy(self, branch, diff_file):
         """
@@ -229,11 +271,14 @@ class GitDiffApp(tk.Tk):
                     if os.path.exists(src):
                         os.makedirs(os.path.dirname(dest), exist_ok=True)
                         shutil.copy2(src, dest)
-                        self.log(f"{branch}: コピー成功 - {rel_path}")
+                        # self.log(f"{branch}: コピー成功 - {rel_path}")
+                        self.log_queue.put(f"{branch}: コピー成功 - {rel_path}")
                     else:
-                        self.log(f"{branch}: スキップ - {rel_path} (存在しません)")
+                        # self.log(f"{branch}: スキップ - {rel_path} (存在しません)")
+                        self.log_queue.put(f"{branch}: スキップ - {rel_path} (存在しません)")
                 except Exception as e:
-                    self.log(f"{branch}: コピー失敗 - {rel_path} ({e})")
+                    # self.log(f"{branch}: コピー失敗 - {rel_path} ({e})")
+                    self.log_queue.put(f"{branch}: コピー失敗 - {rel_path} ({e})")
 
     def clear_log(self):
         """
@@ -251,7 +296,8 @@ class GitDiffApp(tk.Tk):
         log_file = os.path.join(self.diff_dir, datetime.now().strftime("%Y%m%d%H%M%S") + ".log")
         with open(log_file, "w", encoding="utf-8") as f:
             f.write(self.log_text.get("1.0", tk.END))
-        self.log(f"ログ出力: {log_file}")
+        self.log_queue.put(f"ログ出力: {log_file}")
+        # self.log(f"ログ出力: {log_file}")
 
     def _get_current_branch(self):
         """
