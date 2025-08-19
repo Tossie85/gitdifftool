@@ -266,7 +266,9 @@ class GitDiffApp(tk.Tk):
         """
         実行ログのクリア
         """
+        self.log_text.config(state="normal")
         self.log_text.delete("1.0", tk.END)
+        self.log_text.config(state="disabled")
 
     def save_log(self):
         """
