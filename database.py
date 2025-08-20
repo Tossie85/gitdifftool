@@ -43,6 +43,7 @@ CREATE_TB_USER_SETTINGS = f"""
         updated_dt TEXT
     );
 """
+DB_NAME = 'git_tool.db'
 KEY_WORKSPACE = 'current_workspace'
 KEY_REPO_PATH = 'repo_path'
 KEY_OUTPUT_PATH = 'output_path'
@@ -53,7 +54,7 @@ class Database():
     """
     def __init__(self):
         super().__init__()
-        self.db_name = 'git_tool.db'
+        self.db_name = DB_NAME
         # DBを初期化する
         self.db_init()
     

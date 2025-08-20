@@ -11,54 +11,75 @@ import re
 import database
 import ws_modal
 
+CALLBACK_SELECTED_WS = 'selected_ws'
+CALLBACK_UNSELECTED_WS = 'unselected_ws'
+
 class GitDiffApp(tk.Tk):
     def __init__(self):
+        self.root = super()
         super().__init__()
+        # self.root = root
         self.title('Git Branch Diff Tool')
-        # 各種変数の初期化
+        # キュー（ログや進行状況をスレッドから受け取る）
+        self.log_queue = queue.Queue()
+        # データベースインスタンスの生成
+        self.db = database.Database()
+        # ウィジットの生成
+        self._create_widgets()
+        # データ初期化
+        self._data_init()
+        # ワークスペース選択モーダルの表示
+        self.default_ws = ''
+        if self.db.exists_user_setting_info('default_workspace'):
+            self.default_ws = self.db.get_user_setting('default_workspace')
+        if self.default_ws == '':
+            self.show_select_workspace_modal()
+        else:
+            self.ws_name = self.default_ws
+            self.load_settings()
+
+        self.progress_queue = queue.Queue()
+        # 定期的にログをチェック
+        self.after(100, self.update_log)
+
+    def _data_init(self):
+        """
+        各種変数の初期化
+        """
         self.repo_path = ''
         self.output_path = ''
         self.branches = []
         self.diff_dir = ''
         self.db_name = ''
         self.ws_name = ''
-        
-        # キュー（ログや進行状況をスレッドから受け取る）
-        self.log_queue = queue.Queue()
-
-        # ウィジットの生成
-        self.create_widgets()
-        # ワークスペース選択モーダルの表示
-        ws_modal.SelectWorkspaceModal(self)
-        # データベースインスタンスの生成
-        self.db = database.Database()
-        # 設定の読み込み
-        self.load_settings()
-
-        self.progress_queue = queue.Queue()
-        # 定期的にログをチェック
-        self.after(100, self.update_log)
+        self.branch1_combo.set('')
+        self.branch2_combo.set('')
 
     def load_settings(self):
         """
         設定の読み込み
         """
+        # 読み込む前にいったん初期化
+        self._data_init()
         self.db_name = self.db.get_db_name
         if self.db_name != '':
             self.ws_name = self.db.get_user_setting(database.KEY_WORKSPACE)
             if self.ws_name != '':
+                # ワークスペース名をキーにブランチ情報を取得する
                 self.branches = self.db.get_branches(self.ws_name)
+                # ブランチ情報をコンボボックスにセットする
                 self.branch1_combo['values'] = self.branches
                 self.branch2_combo['values'] = self.branches
                 ws_info = self.db.get_workspace_settings(self.ws_name)
                 self.repo_path = ws_info[database.KEY_REPO_PATH]
                 if self.repo_path:
+                    self.git_folder_entry.delete(0, tk.END)
                     self.git_folder_entry.insert(0, self.repo_path)
+
                 self.output_path = ws_info[database.KEY_OUTPUT_PATH]
                 if self.output_path:
+                    self.output_folder_entry.delete(0, tk.END)
                     self.output_folder_entry.insert(0, self.output_path)
-            else:
-                self.destroy()
 
     def save_settings(self):
         """
@@ -66,7 +87,7 @@ class GitDiffApp(tk.Tk):
         """
         self.db.update_or_insert_workspace_settings(self.ws_name,self.repo_path,self.output_path)
 
-    def create_widgets(self):
+    def _create_widgets(self):
         """
         ウィジットを生成する
         """
@@ -93,6 +114,31 @@ class GitDiffApp(tk.Tk):
         tk.Button(self, text="ログクリア", command=self.clear_log).grid(row=4, column=3)
         tk.Button(self, text="ログ保存", command=self.save_log).grid(row=4, column=4)
 
+        # メニューの設定
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
+        setting_menu = tk.Menu(menubar, tearoff=False)
+        menubar.add_cascade(label='設定', menu=setting_menu)
+        # メニュにアクションを追加
+        setting_menu.add_command(label='ワークスペース',command=self.show_select_workspace_modal)
+
+    def show_select_workspace_modal(self):
+        """
+        ワークスペース選択モーダルを開く
+        """
+        self.ws_modal = ws_modal.SelectWorkspaceModal(self, self.after_ws_modal)
+    
+    def after_ws_modal(self, value):
+        """
+        ワークスペース選択モーダルコールバック
+        """
+        if value == CALLBACK_SELECTED_WS:
+            self.load_settings()
+        if value == CALLBACK_UNSELECTED_WS:
+            if self.ws_name == '':
+                self.destroy()
+    
+   
     def log(self, message):
         """
         UIスレッドからログ書き込み
