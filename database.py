@@ -31,6 +31,22 @@ CREATE_TB_BRANCHES = f"""
         updated_dt TEXT
     );
 """
+
+# コミットテーブルのテーブル名
+TB_COMMITS = "r_commits"
+# コミットテーブルの作成SQL
+CREATE_TB_COMMITS = f"""
+    CREATE TABLE IF NOT EXISTS {TB_COMMITS} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ws_name TEXT NOT NULL,
+        commit_id TEXT NOT NULL,
+        commit_dt TEXT,
+        commit_comment TEXT,
+        auther TEXT,
+        created_dt TEXT,
+        updated_dt TEXT
+    );
+"""
 # ユーザ設定テーブルのテーブル名
 TB_USER_SETTINGS = "m_user_settings"
 # ユーザ設定テーブルの作成SQL
@@ -65,6 +81,7 @@ class Database():
         self.create_table_if_not_exists(CREATE_TB_WORKSPACE)
         self.create_table_if_not_exists(CREATE_TB_BRANCHES)
         self.create_table_if_not_exists(CREATE_TB_USER_SETTINGS)
+        self.create_table_if_not_exists(CREATE_TB_COMMITS)
     
     def create_table_if_not_exists(self, create_table_sql):
         try:
@@ -136,6 +153,78 @@ class Database():
         finally:
             conn.close()
     
+
+
+
+
+    def update_commit_logs(self, ws_name, commits):
+        """
+        コミット情報の更新
+        ワークスペースのコミット情報を一度削除して、最新のコミット情報を登録する
+        """
+        # commit_id, commit_dt, commit_comment, auther
+        try:
+            # 現在のテーブルからコミット情報を削除する
+            delete_sql = f"""
+                DELETE FROM {TB_COMMITS} WHERE ws_name = '{ws_name}';
+            """
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(delete_sql)
+
+            # 新しくブランチ情報を追加する
+            insert_values = ""
+            
+            for commit in commits:
+                insert_values += f"('{ws_name}','{commit[0]}','{commit[1]}','{commit[2]}','{commit[3]}', '{self._get_now_string()}', '{self._get_now_string()}')\n,"
+            # 最後のカンマだけ取り除く
+            insert_values = insert_values[:-1]
+            insert_sql = f"""
+                INSERT INTO {TB_COMMITS} (ws_name, commit_id, commit_dt, commit_comment, auther, created_dt, updated_dt) VALUES  
+                {insert_values};
+            """
+            cursor.execute(insert_sql)
+            conn.commit()
+        except Exception as e:
+            # エラー時はロールバックする
+            conn.rollback()
+            print(self._location())
+            print(f"ERROR:{e}")
+        finally:
+            conn.close()
+    
+    def get_commits(self, ws_name):
+        """
+        指定のワークスペースのコミット一覧をDBから取得し配列で返す
+        """
+        try:
+            select_sql = f"""
+                SELECT commit_id, commit_dt, commit_comment, auther FROM {TB_COMMITS} WHERE ws_name = '{ws_name}';
+            """
+            # select_sql = f"""
+            #     SELECT commit_id FROM {TB_COMMITS} WHERE ws_name = '{ws_name}';
+            # """
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(select_sql)
+            result = cursor.fetchall()
+
+            commits = ['HEAD','HEAD~','HEAD~2']
+            for b in result:
+                commits.append([b[0],b[1],b[2],b[3]])
+                # commits.append(b[0])
+            return commits
+        except Exception as e:
+            print(self._location())
+            print(f"ERROR:{e}")
+        finally:
+            conn.close()
+
+
+
+
+
+
     def get_workspace_settings(self, ws_name):
         """
         指定のワークスペースの設定をDBから取得

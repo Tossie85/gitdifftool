@@ -14,6 +14,9 @@ import ws_modal
 CALLBACK_SELECTED_WS = 'selected_ws'
 CALLBACK_UNSELECTED_WS = 'unselected_ws'
 
+SELECT_DIFF_BRANCH = 0
+SELECT_DIFF_COMMIT = 1
+
 class GitDiffApp(tk.Tk):
     def __init__(self):
         self.root = super()
@@ -48,7 +51,7 @@ class GitDiffApp(tk.Tk):
         """
         self.repo_path = ''
         self.output_path = ''
-        self.branches = []
+        # branches = []
         self.diff_dir = ''
         self.db_name = ''
         self.ws_name = ''
@@ -66,10 +69,16 @@ class GitDiffApp(tk.Tk):
             self.ws_name = self.db.get_user_setting(database.KEY_WORKSPACE)
             if self.ws_name != '':
                 # ワークスペース名をキーにブランチ情報を取得する
-                self.branches = self.db.get_branches(self.ws_name)
+                branches = self.db.get_branches(self.ws_name)
                 # ブランチ情報をコンボボックスにセットする
-                self.branch1_combo['values'] = self.branches
-                self.branch2_combo['values'] = self.branches
+                self.branch1_combo['values'] = branches
+                self.branch2_combo['values'] = branches
+                # ワークスペース名をキーにコミット情報を取得する
+                commits = self.db.get_commits(self.ws_name)
+                # コミット情報をコンボボックスにセットする
+                self.commit1_combo['values'] = commits
+                self.commit2_combo['values'] = commits
+
                 ws_info = self.db.get_workspace_settings(self.ws_name)
                 self.repo_path = ws_info[database.KEY_REPO_PATH]
                 if self.repo_path:
@@ -91,28 +100,45 @@ class GitDiffApp(tk.Tk):
         """
         ウィジットを生成する
         """
-        tk.Button(self, text="Gitフォルダ選択", command=self.select_git_folder).grid(row=0, column=0)
-        self.git_folder_entry = tk.Entry(self, width=80)
-        self.git_folder_entry.grid(row=0, column=1, columnspan=4)
+        tk.Label(self, text="gitフォルダ",width=12).grid(row=0,column=0)
+        self.git_folder_entry = tk.Entry(self, width=74)
+        self.git_folder_entry.grid(row=0, column=1, columnspan=5)
+        tk.Button(self, text="選択", command=self.select_git_folder, width=10).grid(row=0, column=6)
 
-        tk.Button(self, text="出力フォルダ選択", command=self.select_output_folder).grid(row=1, column=0)
-        self.output_folder_entry = tk.Entry(self, width=80)
-        self.output_folder_entry.grid(row=1, column=1, columnspan=4)
+        tk.Label(self, text="出力フォルダ",width=12).grid(row=1,column=0)
+        self.output_folder_entry = tk.Entry(self, width=74)
+        self.output_folder_entry.grid(row=1, column=1, columnspan=5)
+        tk.Button(self, text="選択", command=self.select_output_folder,width=10).grid(row=1, column=6)
 
-        tk.Button(self, text="ブランチ更新", command=self.update_branches).grid(row=2, column=0)
-        self.branch1_combo = ttk.Combobox(self)
-        self.branch1_combo.grid(row=2, column=1)
-        self.branch2_combo = ttk.Combobox(self)
-        self.branch2_combo.grid(row=2, column=2)
+        tk.Label(self, text="ブランチ情報",width=12).grid(row=3,column=0)
+        self.branch1_combo = ttk.Combobox(self, width=74)
+        self.branch1_combo.grid(row=3, column=1, columnspan=5)
+        self.branch2_combo = ttk.Combobox(self, width=74)
+        self.branch2_combo.grid(row=4, column=1, columnspan=5)
+        tk.Button(self, text="ブランチ更新", command=self.update_branches, height=2, width=10).grid(row=3, column=6, rowspan=2)
 
-        tk.Button(self, text="実行", command=self.execute).grid(row=2, column=3)
+        tk.Label(self, text="コミット情報",width=12).grid(row=5,column=0)
+        self.commit1_combo = ttk.Combobox(self,width=74)
+        self.commit1_combo.grid(row=5, column=1, columnspan=5)
+        self.commit2_combo = ttk.Combobox(self,width=74)
+        self.commit2_combo.grid(row=6, column=1, columnspan=5)
+        tk.Button(self, text="コミット更新", command=self.update_commits, height=2, width=10).grid(row=5, column=6,rowspan=2)
+
+        self.diff_radio_value = tk.IntVar(value = SELECT_DIFF_BRANCH)
+        tk.Label(self, text="比較",width=12).grid(row=7,column=0)
+        self.branch_radio = ttk.Radiobutton(self, text="ブランチ間比較", value=SELECT_DIFF_BRANCH,variable=self.diff_radio_value).grid(row=7,column=1)
+        self.commit_radio = ttk.Radiobutton(self, text="コミット間比較", value=SELECT_DIFF_COMMIT,variable=self.diff_radio_value).grid(row=7,column=2)
+        tk.Button(self, text="実行", command=self.execute, width=10).grid(row=7, column=6)
 
         # ログ表示（リアルタイム追記用）
         self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
-        self.log_text.grid(row=3, column=0, columnspan=5, padx=5, pady=5)
+        self.log_text.grid(row=8, column=0, columnspan=7, padx=5, pady=5)
 
-        tk.Button(self, text="ログクリア", command=self.clear_log).grid(row=4, column=3)
-        tk.Button(self, text="ログ保存", command=self.save_log).grid(row=4, column=4)
+        tk.Button(self, text="ログクリア", command=self.clear_log,width=10).grid(row=9, column=5)
+        tk.Button(self, text="ログ保存", command=self.save_log,width=10).grid(row=9, column=6)
+
+        # tk.Button(self, text="テスト", command=self.update_commits).grid(row=4, column=1)
+        # tk.Button(self, text="テスト2", command=self.get_commits).grid(row=4, column=2)
 
         # メニューの設定
         menubar = tk.Menu(self)
@@ -121,6 +147,9 @@ class GitDiffApp(tk.Tk):
         menubar.add_cascade(label='設定', menu=setting_menu)
         # メニュにアクションを追加
         setting_menu.add_command(label='ワークスペース',command=self.show_select_workspace_modal)
+        
+        # ウィンドウサイズ変更抑止
+        self.resizable(0,0)
 
     def show_select_workspace_modal(self):
         """
@@ -144,7 +173,7 @@ class GitDiffApp(tk.Tk):
         UIスレッドからログ書き込み
         """
         self.log_text.config(state="normal")
-        print(f"message:{message}")
+        # print(f"message:{message}")
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.yview(tk.END)
         self.log_text.config(state="disabled")
@@ -188,14 +217,55 @@ class GitDiffApp(tk.Tk):
             return
         try:
             result = subprocess.check_output(["git", "branch"], cwd=self.repo_path, text=True)
-            self.branches = [line.strip().lstrip('* ').strip() for line in result.splitlines()]
-            self.branch1_combo['values'] = self.branches
-            self.branch2_combo['values'] = self.branches
-            self.db.update_branches(self.ws_name,self.branches)
+            branches = [line.strip().lstrip('* ').strip() for line in result.splitlines()]
+            self.branch1_combo['values'] = branches
+            self.branch2_combo['values'] = branches
+            self.db.update_branches(self.ws_name,branches)
             self.log_queue.put("ブランチ一覧を更新しました")
         except Exception as e:
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"ブランチ取得エラー: {e}")
+
+    def update_commits(self):
+        """
+        コミット情報の更新
+        """
+        if not self.repo_path:
+            messagebox.showerror("エラー", "Gitフォルダを選択してください")
+            return
+        try:
+            num = 10
+            # 出力フォーマット
+            foption = f'--pretty=format:%h|||%cd|||%s|||%an'
+            # 日付のフォーマット
+            doption = f"--date=format:%Y-%m-%d %H:%M:%S"
+            # 取得件数 TODO: ユーザ設定で保存する予定
+            noption = f"-{num}"
+            # 全ブランチ
+            boption = f"--all"
+            # encodingオプションをつけないとエラーになる（cp932）
+            result = subprocess.check_output(["git", "log", foption, doption, noption, boption], cwd=self.repo_path, text=True, encoding='utf-8' )
+            # print (result)
+            commit_lines = [line for line in result.splitlines()]
+            # print (self.commits)
+            commits = []
+            for commit in commit_lines:
+                commits.append(commit.split('|||'))
+
+            # print(commits)
+            self.db.update_commit_logs(self.ws_name,commits)
+            result = self.db.get_commits(self.ws_name)
+            self.commit1_combo['values'] = result
+            self.commit2_combo['values'] = result
+            # self.db.update_branches(self.ws_name,branches)
+            self.log_queue.put("コミット一覧を更新しました")
+        except Exception as e:
+            messagebox.showerror("エラー", str(e))
+            self.log_queue.put(f"コミットログ取得エラー: {e}")
+
+    def get_commits(self):
+        commits = self.db.get_commits(self.ws_name)
+        print(commits)
 
     def execute(self):
         """
@@ -208,6 +278,7 @@ class GitDiffApp(tk.Tk):
             self.output_path = self.output_folder_entry.get()
             self.save_settings()
             branch1, branch2 = self.branch1_combo.get(), self.branch2_combo.get()
+            commit1, commit2 = self.commit1_combo.get(), self.commit2_combo.get()
 
             if not os.path.isdir(self.repo_path):
                 raise ValueError("Gitフォルダが無効です")
@@ -215,39 +286,48 @@ class GitDiffApp(tk.Tk):
                 raise ValueError(".gitが存在しません")
             if not os.path.isdir(self.output_path):
                 raise ValueError("出力フォルダが無効です")
-            if branch1 == branch2:
-                raise ValueError("異なるブランチを選択してください")
+            diff_ways = self.diff_radio_value.get()
+            if diff_ways == SELECT_DIFF_BRANCH:
+                if branch1 == branch2:
+                    raise ValueError("異なるブランチを選択してください")
+            else:
+                if commit1 == commit2:
+                    raise ValueError("異なるコミットを選択してください")
 
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.diff_dir = os.path.join(self.output_path, now)
             os.makedirs(self.diff_dir, exist_ok=True)
 
-            safe_branch1 = re.sub(r'[^\w.-]', '-', branch1)
-            safe_branch2 = re.sub(r'[^\w.-]', '-', branch2)
-            diff_file = os.path.join(self.diff_dir, f"diff_{safe_branch1}_{safe_branch2}.txt")
-
+            if diff_ways == SELECT_DIFF_BRANCH:
+                safe_branch1 = re.sub(r'[^\w.-]', '-', branch1)
+                safe_branch2 = re.sub(r'[^\w.-]', '-', branch2)
+                diff_file = os.path.join(self.diff_dir, f"diff_{safe_branch1}_{safe_branch2}.txt")
+                diff1,diff2 = branch1,branch2
+            else:
+                safe_commit1 = commit1[:7].split()
+                safe_commit2 = commit2[:7].split()
+                diff1,diff2 = safe_commit1[0],safe_commit2[0]
+                diff_file = os.path.join(self.diff_dir, f"diff_{diff1}_{diff2}.txt")
             # 重い処理は別スレッドで実行
             threading.Thread(
                 target=self._execute_worker,
-                args=(branch1, branch2, diff_file),
+                args=(diff1, diff2, diff_file),
                 daemon=True
             ).start()
-
         except Exception as e:
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"実行エラー: {e}")
 
-    def _execute_worker(self, branch1, branch2, diff_file):
+    def _execute_worker(self, diff1, diff2, diff_file):
         try:
             # 差分一覧ファイルを作成
             with open(diff_file, "w", encoding="utf-8") as df:
-                subprocess.run(["git", "diff", "--name-only", branch1, branch2], cwd=self.repo_path, text=True, stdout=df, check=False)
+                subprocess.run(["git", "diff", "--name-only", diff1, diff2], cwd=self.repo_path, text=True, stdout=df, check=False)
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
-
             # ブランチ1のコピー
-            self.file_copy_from_branch(branch1, diff_file)
+            self.file_copy_from_branch(diff1, diff_file)
             # ブランチ2のコピー
-            self.file_copy_from_branch(branch2, diff_file)
+            self.file_copy_from_branch(diff2, diff_file)
 
             # 完了通知
             self.log_queue.put("完了しました")
