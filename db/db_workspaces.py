@@ -60,7 +60,7 @@ class DbWorkspace(dbs.DbBase):
                 update m_workspace 
                     set repo_path = '{repo_path}', 
                     output_path = '{output_path}',
-                    updated_dt = '{self._get_now_string()}'
+                    updated_dt = '{self.get_now_string()}'
                 where ws_name = '{ws_name}';
                 """
             else:
@@ -68,7 +68,7 @@ class DbWorkspace(dbs.DbBase):
                 insert into m_workspace 
                     (ws_name, repo_path, output_path, created_dt, updated_dt)
                     values 
-                    ('{ws_name}','{repo_path}','{output_path}','{self._get_now_string()}','{self._get_now_string()}')
+                    ('{ws_name}','{repo_path}','{output_path}','{self.get_now_string()}','{self.get_now_string()}')
                 ;
                 """
             cursor.execute(sql)

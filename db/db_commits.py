@@ -39,7 +39,7 @@ class DbCommit(dbs.DbBase):
             insert_values = ""
 
             for commit in commits:
-                insert_values += f"('{ws_name}','{commit[0]}','{commit[1]}','{commit[2]}','{commit[3]}', '{self._get_now_string()}', '{self._get_now_string()}')\n,"
+                insert_values += f"('{ws_name}','{commit[0]}','{commit[1]}','{commit[2]}','{commit[3]}', '{self.get_now_string()}', '{self.get_now_string()}')\n,"
             # 最後のカンマだけ取り除く
             insert_values = insert_values[:-1]
             insert_sql = f"""

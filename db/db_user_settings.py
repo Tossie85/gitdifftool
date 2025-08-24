@@ -31,7 +31,7 @@ class DbUserSettings(dbs.DbBase):
                 sql = f"""
                 update {TB_NAME} 
                     set value = '{value}', 
-                    updated_dt = '{self._get_now_string()}'
+                    updated_dt = '{self.get_now_string()}'
                     where key = '{key}'
                 ;
                 """
@@ -40,7 +40,7 @@ class DbUserSettings(dbs.DbBase):
                 insert into {TB_NAME} 
                     (key, value, created_dt, updated_dt)
                     values 
-                    ('{key}','{value}','{self._get_now_string()}','{self._get_now_string()}')
+                    ('{key}','{value}','{self.get_now_string()}','{self.get_now_string()}')
                 ;
                 """
             cursor.execute(sql)
