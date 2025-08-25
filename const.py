@@ -1,0 +1,2 @@
+APP_NAME = 'ぎっとさぶん'
+COMMIT_NUMS = 50

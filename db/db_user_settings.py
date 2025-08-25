@@ -14,6 +14,7 @@ TB_CREATE = f"""
     );
 """
 
+
 class DbUserSettings(dbs.DbBase):
     def __init__(self):
         super().__init__(TB_NAME, TB_CREATE)

@@ -2,7 +2,7 @@ from db import db_base as dbs
 import sqlite3
 
 # テーブル名
-TB_NAME = "r_branches"
+TB_NAME = "m_branches"
 # ブランチテーブルの作成SQL
 TB_CREATE = f"""
     CREATE TABLE IF NOT EXISTS {TB_NAME} (
@@ -13,6 +13,7 @@ TB_CREATE = f"""
         updated_dt TEXT
     );
 """
+
 
 class DbBranch(dbs.DbBase):
     def __init__(self):
@@ -59,7 +60,7 @@ class DbBranch(dbs.DbBase):
         """
         try:
             select_sql = f"""
-                SELECT branch_name FROM r_branches WHERE ws_name = '{ws_name}';
+                SELECT branch_name FROM {TB_NAME} WHERE ws_name = '{ws_name}';
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()

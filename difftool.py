@@ -13,6 +13,7 @@ import db.db_branches as dbbr
 import db.db_commits as dbco
 import db.db_user_settings as dbus
 import ws_modal
+import const
 
 CALLBACK_SELECTED_WS = "selected_ws"
 CALLBACK_UNSELECTED_WS = "unselected_ws"
@@ -26,11 +27,9 @@ class GitDiffApp(tk.Tk):
         self.root = super()
         super().__init__()
         # self.root = root
-        self.title("Git Branch Diff Tool")
+        self.title(f"{const.APP_NAME}")
         # キュー（ログや進行状況をスレッドから受け取る）
         self.log_queue = queue.Queue()
-        # # データベースインスタンスの生成
-        # self.db = dbbs.Database()
         # ウィジットの生成
         self._create_widgets()
         # データ初期化
@@ -56,9 +55,7 @@ class GitDiffApp(tk.Tk):
         """
         self.repo_path = ""
         self.output_path = ""
-        # branches = []
         self.diff_dir = ""
-        # self.db_name = ""
         self.ws_name = ""
         self.branch1_combo.set("")
         self.branch2_combo.set("")
@@ -70,6 +67,7 @@ class GitDiffApp(tk.Tk):
         # 読み込む前にいったん初期化
         self._data_init()
 
+        # データベースの各インスタンスを生成する
         dbb = dbbr.DbBranch()
         dbc = dbco.DbCommit()
         dbw = dbws.DbWorkspace()
@@ -166,6 +164,10 @@ class GitDiffApp(tk.Tk):
         self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
         self.log_text.grid(row=8, column=0, columnspan=7, padx=5, pady=5)
 
+        tk.Button(self, text="結果を開く", command=self.open_result,width=10).grid(
+            row=9, column=0
+        )
+
         tk.Button(self, text="ログクリア", command=self.clear_log, width=10).grid(
             row=9, column=5
         )
@@ -207,7 +209,6 @@ class GitDiffApp(tk.Tk):
         UIスレッドからログ書き込み
         """
         self.log_text.config(state="normal")
-        # print(f"message:{message}")
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.yview(tk.END)
         self.log_text.config(state="disabled")
@@ -273,13 +274,12 @@ class GitDiffApp(tk.Tk):
             messagebox.showerror("エラー", "Gitフォルダを選択してください")
             return
         try:
-            num = 10
             # 出力フォーマット
             foption = f"--pretty=format:%h|||%cd|||%s|||%an"
             # 日付のフォーマット
             doption = f"--date=format:%Y-%m-%d %H:%M:%S"
             # 取得件数 TODO: ユーザ設定で保存する予定
-            noption = f"-{num}"
+            noption = f"-{const.COMMIT_NUMS}"
             # 全ブランチ
             boption = f"--all"
             # encodingオプションをつけないとエラーになる（cp932）
@@ -289,20 +289,16 @@ class GitDiffApp(tk.Tk):
                 text=True,
                 encoding="utf-8",
             )
-            # print (result)
             commit_lines = [line for line in result.splitlines()]
-            # print (self.commits)
             commits = []
             for commit in commit_lines:
                 commits.append(commit.split("|||"))
 
-            # print(commits)
             db = dbco.DbCommit()
             db.update_commit_logs(self.ws_name, commits)
             result = db.get_commits(self.ws_name)
             self.commit1_combo["values"] = result
             self.commit2_combo["values"] = result
-            # self.db.update_branches(self.ws_name,branches)
             self.log_queue.put("コミット一覧を更新しました")
         except Exception as e:
             messagebox.showerror("エラー", str(e))
@@ -388,7 +384,8 @@ class GitDiffApp(tk.Tk):
             if messagebox.askyesno(
                 "完了", f"作業フォルダを開きますか？\n{self.diff_dir}"
             ):
-                os.startfile(self.diff_dir)
+                self.open_result()
+                # os.startfile(self.diff_dir)
         except Exception as e:
             self.log_queue.put(str(e))
 
@@ -458,6 +455,16 @@ class GitDiffApp(tk.Tk):
                         )
                 except Exception as e:
                     self.log_queue.put(f"{branch}: コピー失敗 - {rel_path} ({e})")
+
+    def open_result(self):
+        """
+        最後の比較結果フォルダを開く
+        """
+        if self.diff_dir != '':
+            os.startfile(self.diff_dir)
+        else:
+            self.log("まだ比較をしていません")
+            messagebox.showerror("エラー", "まだ比較をしていません")
 
     def clear_log(self):
         """

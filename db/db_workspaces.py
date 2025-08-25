@@ -18,6 +18,7 @@ KEY_WORKSPACE = "current_workspace"
 KEY_REPO_PATH = "repo_path"
 KEY_OUTPUT_PATH = "output_path"
 
+
 class DbWorkspace(dbs.DbBase):
     def __init__(self):
         super().__init__(TB_NAME, TB_CREATE)
@@ -28,7 +29,7 @@ class DbWorkspace(dbs.DbBase):
         """
         try:
             select_sql = f"""
-                SELECT {KEY_REPO_PATH}, {KEY_OUTPUT_PATH} FROM m_workspace WHERE ws_name = '{ws_name}';
+                SELECT {KEY_REPO_PATH}, {KEY_OUTPUT_PATH} FROM {TB_NAME} WHERE ws_name = '{ws_name}';
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
@@ -57,7 +58,7 @@ class DbWorkspace(dbs.DbBase):
             sql = ""
             if self.exists_workspace_info(ws_name):
                 sql = f"""
-                update m_workspace 
+                update {TB_NAME} 
                     set repo_path = '{repo_path}', 
                     output_path = '{output_path}',
                     updated_dt = '{self.get_now_string()}'
@@ -65,7 +66,7 @@ class DbWorkspace(dbs.DbBase):
                 """
             else:
                 sql = f"""
-                insert into m_workspace 
+                insert into {TB_NAME} 
                     (ws_name, repo_path, output_path, created_dt, updated_dt)
                     values 
                     ('{ws_name}','{repo_path}','{output_path}','{self.get_now_string()}','{self.get_now_string()}')
@@ -86,7 +87,7 @@ class DbWorkspace(dbs.DbBase):
         result = []
         try:
             select_sql = f"""
-                SELECT ws_name FROM m_workspace order by id asc;
+                SELECT ws_name FROM {TB_NAME} order by id asc;
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
@@ -112,7 +113,7 @@ class DbWorkspace(dbs.DbBase):
         # ワークスペースの登録数をチェックする
         try:
             select_sql = f"""
-                SELECT count(*) FROM m_workspace WHERE ws_name = '{ws_name}';
+                SELECT count(*) FROM {TB_NAME} WHERE ws_name = '{ws_name}';
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
@@ -135,7 +136,7 @@ class DbWorkspace(dbs.DbBase):
         """
         try:
             count_sql = f"""
-                SELECT count(*) FROM m_workspace;
+                SELECT count(*) FROM {TB_NAME};
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()

@@ -1,14 +1,15 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import messagebox, ttk
 
 import difftool
 import db.db_workspaces as dbws
 import db.db_user_settings as dbus
+import const
 
 class SelectWorkspaceModal(tk.Toplevel):
     def __init__(self, parent, callback):
         super().__init__(parent)
-        self.title("git差分ファイルツール：ワークスペースの選択")
+        self.title(f"{const.APP_NAME}：ワークスペースの選択")
         self.geometry("500x150")
         self.transient(parent)
         self.callback = callback

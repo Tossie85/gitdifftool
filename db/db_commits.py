@@ -1,8 +1,9 @@
 from db import db_base as dbs
 import sqlite3
+import re
 
 # テーブル名
-TB_NAME = "r_commits"
+TB_NAME = "m_commits"
 # コミットテーブルの作成SQL
 TB_CREATE = f"""
     CREATE TABLE IF NOT EXISTS {TB_NAME} (
@@ -11,11 +12,12 @@ TB_CREATE = f"""
         commit_id TEXT NOT NULL,
         commit_dt TEXT,
         commit_comment TEXT,
-        auther TEXT,
+        author TEXT,
         created_dt TEXT,
         updated_dt TEXT
     );
 """
+
 
 class DbCommit(dbs.DbBase):
     def __init__(self):
@@ -39,11 +41,13 @@ class DbCommit(dbs.DbBase):
             insert_values = ""
 
             for commit in commits:
+                # コメントにスラッシュが入ることがあるので無害化
+                commit[2] = re.sub(r"[^\w.-]", " ", commit[2])
                 insert_values += f"('{ws_name}','{commit[0]}','{commit[1]}','{commit[2]}','{commit[3]}', '{self.get_now_string()}', '{self.get_now_string()}')\n,"
             # 最後のカンマだけ取り除く
             insert_values = insert_values[:-1]
             insert_sql = f"""
-                INSERT INTO {TB_NAME} (ws_name, commit_id, commit_dt, commit_comment, auther, created_dt, updated_dt) VALUES  
+                INSERT INTO {TB_NAME} (ws_name, commit_id, commit_dt, commit_comment, author, created_dt, updated_dt) VALUES  
                 {insert_values};
             """
             cursor.execute(insert_sql)
@@ -62,7 +66,7 @@ class DbCommit(dbs.DbBase):
         """
         try:
             select_sql = f"""
-                SELECT commit_id, commit_dt, commit_comment, auther FROM {TB_NAME} WHERE ws_name = '{ws_name}';
+                SELECT commit_id, commit_dt, commit_comment, author FROM {TB_NAME} WHERE ws_name = '{ws_name}';
             """
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()

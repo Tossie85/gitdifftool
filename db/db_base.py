@@ -15,14 +15,14 @@ class DbBase:
         # DBテーブルを作成する
         self.create_table_if_not_exists(tb_create)
 
-    def create_table_if_not_exists(self, tb_name):
+    def create_table_if_not_exists(self, tb_create):
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            cursor.execute(tb_name)
+            cursor.execute(tb_create)
             conn.commit()
         except Exception as e:
-            print(self._location())
+            print(self.location())
             print(f"ERROR:{e}")
         finally:
             conn.close()
