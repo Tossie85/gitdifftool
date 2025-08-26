@@ -20,6 +20,7 @@ CALLBACK_UNSELECTED_WS = "unselected_ws"
 
 SELECT_DIFF_BRANCH = 0
 SELECT_DIFF_COMMIT = 1
+SELECT_DIFF_PRECOMMIT = 2
 
 
 class GitDiffApp(tk.Tk):
@@ -156,6 +157,12 @@ class GitDiffApp(tk.Tk):
             value=SELECT_DIFF_COMMIT,
             variable=self.diff_radio_value,
         ).grid(row=7, column=2)
+        self.commit_radio = ttk.Radiobutton(
+            self,
+            text="未コミット比較",
+            value=SELECT_DIFF_PRECOMMIT,
+            variable=self.diff_radio_value,
+        ).grid(row=7, column=3)
         tk.Button(self, text="実行", command=self.execute, width=10).grid(
             row=7, column=6
         )
@@ -332,7 +339,7 @@ class GitDiffApp(tk.Tk):
             if diff_ways == SELECT_DIFF_BRANCH:
                 if branch1 == branch2:
                     raise ValueError("異なるブランチを選択してください")
-            else:
+            elif diff_ways == SELECT_DIFF_COMMIT:
                 if commit1 == commit2:
                     raise ValueError("異なるコミットを選択してください")
 
@@ -347,10 +354,13 @@ class GitDiffApp(tk.Tk):
                     self.diff_dir, f"diff_{safe_branch1}_{safe_branch2}.txt"
                 )
                 diff1, diff2 = branch1, branch2
-            else:
+            elif diff_ways == SELECT_DIFF_COMMIT:
                 safe_commit1 = commit1[:7].split()
                 safe_commit2 = commit2[:7].split()
                 diff1, diff2 = safe_commit1[0], safe_commit2[0]
+                diff_file = os.path.join(self.diff_dir, f"diff_{diff1}_{diff2}.txt")
+            elif diff_ways == SELECT_DIFF_PRECOMMIT:
+                diff1, diff2 = 'HEAD', ''
                 diff_file = os.path.join(self.diff_dir, f"diff_{diff1}_{diff2}.txt")
             # 重い処理は別スレッドで実行
             threading.Thread(
@@ -363,9 +373,12 @@ class GitDiffApp(tk.Tk):
     def _execute_worker(self, diff1, diff2, diff_file):
         try:
             # 差分一覧ファイルを作成
+            param = ["git", "diff", "--name-only", diff1]
+            if diff2 != '':
+                param.append(diff2)
             with open(diff_file, "w", encoding="utf-8") as df:
                 subprocess.run(
-                    ["git", "diff", "--name-only", diff1, diff2],
+                    param,
                     cwd=self.repo_path,
                     text=True,
                     stdout=df,
@@ -373,9 +386,12 @@ class GitDiffApp(tk.Tk):
                 )
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
             # ブランチ1のコピー
-            self.file_copy_from_branch(diff1, diff_file)
+            self.file_copy_from_commit(diff1, diff_file)
             # ブランチ2のコピー
-            self.file_copy_from_branch(diff2, diff_file)
+            if diff2 != '':
+                self.file_copy_from_commit(diff2, diff_file)
+            else:
+                self.file_copy_from_local(diff_file)
 
             # 完了通知
             self.log_queue.put("完了しました")
@@ -385,13 +401,31 @@ class GitDiffApp(tk.Tk):
                 "完了", f"作業フォルダを開きますか？\n{self.diff_dir}"
             ):
                 self.open_result()
-                # os.startfile(self.diff_dir)
         except Exception as e:
             self.log_queue.put(str(e))
 
-    def file_copy_from_branch(self, branch, diff_file):
+    def file_copy_from_local(self, diff_file):
         """
-        ブランチを切り替えずに差分ファイル記載のファイルをブランチからコピー
+        ローカルのファイルをそのままコピーする
+        未コミットの変更をコピーするため
+        """
+        with open(diff_file, encoding='utf-8') as f:
+            rel_paths = [line.strip() for line in f if line.strip()]
+        
+        for path in rel_paths:
+            from_path = os.path.join(self.repo_path,path)
+            target_file = os.path.join(self.diff_dir, const.LOCAL_CHANGE, path)
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+            try:
+                shutil.copy2(from_path, target_file)
+                self.log_queue.put(f"{const.LOCAL_CHANGE}: コピー成功 - {from_path}")
+            except Exception as e:
+                self.log_queue.put(f"スキップ - エラー：{e}({from_path})")
+
+
+    def file_copy_from_commit(self, branch, diff_file):
+        """
+        コミット済みの内容からファイルをコピー
         """
         safe_branch = re.sub(r"[^\w.-]", "-", branch)
         branch_dir = os.path.join(self.diff_dir, safe_branch)
