@@ -80,6 +80,31 @@ class DbWorkspace(dbs.DbBase):
         finally:
             conn.close()
 
+    def insert_workspace_name(self, ws_name):
+        """
+        ワークスペースの存在を確認して、なければ名前を登録する
+        ワークスペース選択ダイアログで初回ワークスペース選択を行ったときの処理
+        """
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            sql = ""
+            if not self.exists_workspace_info(ws_name):
+                sql = f"""
+                insert into {TB_NAME} 
+                    (ws_name, created_dt, updated_dt)
+                    values 
+                    ('{ws_name}','{self.get_now_string()}','{self.get_now_string()}')
+                ;
+                """
+            cursor.execute(sql)
+            conn.commit()
+        except Exception as e:
+            print(self.location())
+            print(f"ERROR:{e}")
+        finally:
+            conn.close()        
+
     def get_workspace_name_list(self):
         """
         ワークスペース名一覧を取得する

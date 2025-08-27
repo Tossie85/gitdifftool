@@ -413,6 +413,12 @@ class GitDiffApp(tk.Tk):
             rel_paths = [line.strip() for line in f if line.strip()]
         
         for path in rel_paths:
+            # 無効な文字を排除
+            path = re.sub(r'[\\/:*?"<>|]+','',path)
+            # 除外対象はスキップ
+            if (ex in path for ex in const.EXCEPT_PATH):
+                self.log_queue.put(f"スキップ - :除外対象文字列含む({path})")
+                continue
             from_path = os.path.join(self.repo_path,path)
             target_file = os.path.join(self.diff_dir, const.LOCAL_CHANGE, path)
             os.makedirs(os.path.dirname(target_file), exist_ok=True)

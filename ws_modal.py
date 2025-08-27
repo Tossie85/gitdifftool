@@ -46,6 +46,11 @@ class SelectWorkspaceModal(tk.Toplevel):
     def _select_workspace(self):
         ws_name = self.workspace_combo.get()
         if ws_name != "":
+            # ワークスペースを名前だけ保存
+            dbw = dbws.DbWorkspace()
+            dbw.insert_workspace_name(
+                ws_name
+            )
             db = dbus.DbUserSettings()
             db.update_or_insert_user_settings("current_workspace", ws_name)
 
