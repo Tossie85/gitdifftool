@@ -92,14 +92,15 @@ class GitDiffApp(tk.Tk):
             self.commit2_combo["values"] = commits
 
             ws_info = dbw.get_workspace_settings(self.ws_name)
+            # gitフォルダ情報
             self.repo_path = ws_info[dbws.KEY_REPO_PATH]
+            self.git_folder_entry.delete(0, tk.END)
             if self.repo_path:
-                self.git_folder_entry.delete(0, tk.END)
                 self.git_folder_entry.insert(0, self.repo_path)
-
+            # 出力フォルダ情報
             self.output_path = ws_info[dbws.KEY_OUTPUT_PATH]
+            self.output_folder_entry.delete(0, tk.END)
             if self.output_path:
-                self.output_folder_entry.delete(0, tk.END)
                 self.output_folder_entry.insert(0, self.output_path)
 
             self.title(f"{const.APP_NAME}(Ver.{const.VERSION}):[{self.ws_name}]")

@@ -21,10 +21,19 @@ class SelectWorkspaceModal(tk.Toplevel):
             text="ワークスペースを選択してください\n新しいワークスペースを利用する場合は、ワークスペース名を入力してください",
         )
         label.pack(expand=True)
-
-        self.workspace_combo = ttk.Combobox(self)
+        db = dbus.DbUserSettings()
+        selected = db.get_user_setting(key=dbws.KEY_WORKSPACE)
+        # デフォルトの選択肢として現在のワークスペースをセット
+        combo_var = tk.StringVar(value=selected)
+        # 選択リストをワークスペース設定から取得する
+        values = self._get_ws_list()
+        values.insert(0, '') # 先頭に空文字を追加
+        self.workspace_combo = ttk.Combobox(
+            self,
+            textvariable=combo_var,
+            values=values
+        )
         self.workspace_combo.pack(expand=True)
-        self.workspace_combo["values"] = self._get_ws_list()
 
         self.default_ws_selected = tk.BooleanVar()
         self.checkbox = tk.Checkbutton(

@@ -96,5 +96,5 @@ class DbUserSettings(dbs.DbBase):
         finally:
             conn.close()
 
-        # 取得結果を整形して返す
-        return result[0]
+        # 取得結果を整形して返す(空なら空文字)
+        return result[0] if result else ''
