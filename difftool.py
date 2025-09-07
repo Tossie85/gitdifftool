@@ -12,11 +12,15 @@ import db.db_workspaces as dbws
 import db.db_branches as dbbr
 import db.db_commits as dbco
 import db.db_user_settings as dbus
-import ws_modal
+import db.db_excluded_path as dbexp
+import modal.ws_modal as ws_modal
+import modal.exclude_modal as exclude_modal
 import const
 
 CALLBACK_SELECTED_WS = "selected_ws"
 CALLBACK_UNSELECTED_WS = "unselected_ws"
+CALLBACK_SET_WS = "set_ws"
+CALLBACK_UNSET_WS = "unset_ws"
 
 SELECT_DIFF_BRANCH = 0
 SELECT_DIFF_COMMIT = 1
@@ -38,8 +42,8 @@ class GitDiffApp(tk.Tk):
         # ワークスペース選択モーダルの表示
         self.default_ws = ""
         db = dbus.DbUserSettings()
-        if db.exists_user_setting_info("default_workspace"):
-            self.default_ws = db.get_user_setting("default_workspace")
+        if db.exists_user_setting_info(const.US_KEY_DEFAULT_WS):
+            self.default_ws = db.get_user_setting(const.US_KEY_DEFAULT_WS)
         if self.default_ws == "":
             self.show_select_workspace_modal()
         else:
@@ -98,6 +102,8 @@ class GitDiffApp(tk.Tk):
                 self.output_folder_entry.delete(0, tk.END)
                 self.output_folder_entry.insert(0, self.output_path)
 
+            self.title(f"{const.APP_NAME}(Ver.{const.VERSION}):[{self.ws_name}]")
+
     def save_settings(self):
         """
         ワークスペース設定を保存する
@@ -111,95 +117,123 @@ class GitDiffApp(tk.Tk):
         """
         ウィジットを生成する
         """
-        tk.Label(self, text="gitフォルダ", width=12).grid(row=0, column=0)
+        tk.Label(self, text="gitフォルダ", width=12).grid(
+            row=0, column=0, padx=5, pady=2
+        )
         self.git_folder_entry = tk.Entry(self, width=74)
-        self.git_folder_entry.grid(row=0, column=1, columnspan=5)
+        self.git_folder_entry.grid(row=0, column=1, columnspan=5, padx=5, pady=2)
         tk.Button(self, text="選択", command=self.select_git_folder, width=10).grid(
-            row=0, column=6
+            row=0, column=6, padx=5, pady=2
         )
 
-        tk.Label(self, text="出力フォルダ", width=12).grid(row=1, column=0)
+        tk.Label(self, text="出力フォルダ", width=12).grid(
+            row=1, column=0, padx=5, pady=2
+        )
         self.output_folder_entry = tk.Entry(self, width=74)
-        self.output_folder_entry.grid(row=1, column=1, columnspan=5)
+        self.output_folder_entry.grid(row=1, column=1, columnspan=5, padx=5, pady=2)
         tk.Button(self, text="選択", command=self.select_output_folder, width=10).grid(
-            row=1, column=6
+            row=1, column=6, padx=5, pady=2
         )
 
-        tk.Label(self, text="ブランチ情報", width=12).grid(row=3, column=0)
+        tk.Label(self, text="ブランチ情報", width=12).grid(
+            row=3, column=0, padx=5, pady=2
+        )
         self.branch1_combo = ttk.Combobox(self, width=74)
-        self.branch1_combo.grid(row=3, column=1, columnspan=5)
+        self.branch1_combo.grid(row=3, column=1, columnspan=5, padx=5, pady=2)
         self.branch2_combo = ttk.Combobox(self, width=74)
-        self.branch2_combo.grid(row=4, column=1, columnspan=5)
+        self.branch2_combo.grid(row=4, column=1, columnspan=5, padx=5, pady=2)
         tk.Button(
             self, text="ブランチ更新", command=self.update_branches, height=2, width=10
-        ).grid(row=3, column=6, rowspan=2)
+        ).grid(row=3, column=6, rowspan=2, padx=5, pady=2)
 
-        tk.Label(self, text="コミット情報", width=12).grid(row=5, column=0)
+        tk.Label(self, text="コミット情報", width=12).grid(
+            row=5, column=0, padx=5, pady=2
+        )
         self.commit1_combo = ttk.Combobox(self, width=74)
-        self.commit1_combo.grid(row=5, column=1, columnspan=5)
+        self.commit1_combo.grid(row=5, column=1, columnspan=5, padx=5, pady=2)
         self.commit2_combo = ttk.Combobox(self, width=74)
-        self.commit2_combo.grid(row=6, column=1, columnspan=5)
+        self.commit2_combo.grid(row=6, column=1, columnspan=5, padx=5, pady=2)
         tk.Button(
             self, text="コミット更新", command=self.update_commits, height=2, width=10
-        ).grid(row=5, column=6, rowspan=2)
+        ).grid(row=5, column=6, rowspan=2, padx=5, pady=2)
 
         self.diff_radio_value = tk.IntVar(value=SELECT_DIFF_BRANCH)
-        tk.Label(self, text="比較", width=12).grid(row=7, column=0)
+        tk.Label(self, text="比較", width=12).grid(row=7, column=0, padx=5, pady=2)
         self.branch_radio = ttk.Radiobutton(
             self,
             text="ブランチ間比較",
             value=SELECT_DIFF_BRANCH,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=1)
+        ).grid(row=7, column=1, padx=5, pady=2)
         self.commit_radio = ttk.Radiobutton(
             self,
             text="コミット間比較",
             value=SELECT_DIFF_COMMIT,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=2)
+        ).grid(row=7, column=2, padx=5, pady=2)
         self.commit_radio = ttk.Radiobutton(
             self,
             text="未コミット比較",
             value=SELECT_DIFF_PRECOMMIT,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=3)
+        ).grid(row=7, column=3, padx=5, pady=2)
         tk.Button(self, text="実行", command=self.execute, width=10).grid(
-            row=7, column=6
+            row=7, column=6, padx=5, pady=2
         )
 
         # ログ表示（リアルタイム追記用）
         self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
-        self.log_text.grid(row=8, column=0, columnspan=7, padx=5, pady=5)
+        self.log_text.grid(row=8, column=0, columnspan=7, padx=5, pady=2)
 
-        tk.Button(self, text="結果を開く", command=self.open_result,width=10).grid(
-            row=9, column=0
+        tk.Button(self, text="結果を開く", command=self.open_result, width=10).grid(
+            row=9, column=0, padx=5, pady=2
         )
 
         tk.Button(self, text="ログクリア", command=self.clear_log, width=10).grid(
-            row=9, column=5
+            row=9, column=5, padx=5, pady=2
         )
         tk.Button(self, text="ログ保存", command=self.save_log, width=10).grid(
-            row=9, column=6
+            row=9, column=6, padx=5, pady=2
         )
 
         # メニューの設定
+        self.create_menus()
+
+        # ウィンドウサイズ変更抑止
+        self.resizable(0, 0)
+
+    def create_menus(self):
+        """
+        メニューの設定
+        """
         menubar = tk.Menu(self)
         self.config(menu=menubar)
         setting_menu = tk.Menu(menubar, tearoff=False)
         menubar.add_cascade(label="設定", menu=setting_menu)
+        # ワークスペースメニュ
+        workspace_menu = tk.Menu(setting_menu, tearoff=False)
+        setting_menu.add_cascade(label="ワークスペース", menu=workspace_menu)
         # メニュにアクションを追加
-        setting_menu.add_command(
-            label="ワークスペース", command=self.show_select_workspace_modal
+        workspace_menu.add_command(
+            label=f"{const.TITLE_SELECT_WORKSPACE}",
+            command=self.show_select_workspace_modal,
         )
-
-        # ウィンドウサイズ変更抑止
-        self.resizable(0, 0)
+        workspace_menu.add_command(
+            label=f"{const.TITLE_EXCLUDE_SETTING}",
+            command=self.show_exclude_path_setting_modal,
+        )
 
     def show_select_workspace_modal(self):
         """
         ワークスペース選択モーダルを開く
         """
         self.ws_modal = ws_modal.SelectWorkspaceModal(self, self.after_ws_modal)
+
+    def show_exclude_path_setting_modal(self):
+        """
+        コピー対象外パス設定モーダルを開く
+        """
+        self.ws_modal = exclude_modal.SettingWorkspaceModal(self, self.exclude_modal)
 
     def after_ws_modal(self, value):
         """
@@ -210,6 +244,15 @@ class GitDiffApp(tk.Tk):
         if value == CALLBACK_UNSELECTED_WS:
             if self.ws_name == "":
                 self.destroy()
+
+    def exclude_modal(self, value):
+        """
+        ワークスペース設定モーダルコールバック
+        """
+        if value == CALLBACK_SET_WS:
+            self.log_queue.put(f"インフォ - :除外パス設定完了")
+        if value == CALLBACK_UNSET_WS:
+            self.log_queue.put(f"インフォ - :除外パス設定キャンセル")
 
     def log(self, message):
         """
@@ -259,7 +302,10 @@ class GitDiffApp(tk.Tk):
             return
         try:
             result = subprocess.check_output(
-                ["git", "branch"], cwd=self.repo_path, text=True
+                ["git", "branch"],
+                cwd=self.repo_path,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
             branches = [
                 line.strip().lstrip("* ").strip() for line in result.splitlines()
@@ -360,12 +406,21 @@ class GitDiffApp(tk.Tk):
                 diff1, diff2 = safe_commit1[0], safe_commit2[0]
                 diff_file = os.path.join(self.diff_dir, f"diff_{diff1}_{diff2}.txt")
             elif diff_ways == SELECT_DIFF_PRECOMMIT:
-                diff1, diff2 = 'HEAD', ''
-                diff_file = os.path.join(self.diff_dir, f"diff_{diff1}_{diff2}.txt")
+                # diff1, diff2 = "HEAD", ""
+                diff_file = os.path.join(self.diff_dir, f"diff_local_changed.txt")
+
             # 重い処理は別スレッドで実行
-            threading.Thread(
-                target=self._execute_worker, args=(diff1, diff2, diff_file), daemon=True
-            ).start()
+            if diff_ways != SELECT_DIFF_PRECOMMIT:
+                print(diff_file)
+                threading.Thread(
+                    target=self._execute_worker,
+                    args=(diff1, diff2, diff_file),
+                    daemon=True,
+                ).start()
+            else:
+                threading.Thread(
+                    target=self._execute_worker_local, args=(diff_file,), daemon=True
+                ).start()
         except Exception as e:
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"実行エラー: {e}")
@@ -373,9 +428,7 @@ class GitDiffApp(tk.Tk):
     def _execute_worker(self, diff1, diff2, diff_file):
         try:
             # 差分一覧ファイルを作成
-            param = ["git", "diff", "--name-only", diff1]
-            if diff2 != '':
-                param.append(diff2)
+            param = ["git", "diff", "--name-only", diff1, diff2]
             with open(diff_file, "w", encoding="utf-8") as df:
                 subprocess.run(
                     param,
@@ -383,15 +436,54 @@ class GitDiffApp(tk.Tk):
                     text=True,
                     stdout=df,
                     check=False,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
             # ブランチ1のコピー
             self.file_copy_from_commit(diff1, diff_file)
             # ブランチ2のコピー
-            if diff2 != '':
-                self.file_copy_from_commit(diff2, diff_file)
-            else:
-                self.file_copy_from_local(diff_file)
+            self.file_copy_from_commit(diff2, diff_file)
+
+            # 完了通知
+            self.log_queue.put("完了しました")
+            self.log_queue.put(self.diff_dir)
+
+            if messagebox.askyesno(
+                "完了", f"作業フォルダを開きますか？\n{self.diff_dir}"
+            ):
+                self.open_result()
+        except Exception as e:
+            self.log_queue.put(str(e))
+
+    def _execute_worker_local(self, diff_file):
+        """
+        未コミットのローカル差分生成用
+        """
+        try:
+            # 差分一覧ファイルを作成
+            param = ["git", "status", "--untracked-files=all", "--porcelain"]
+
+            result = subprocess.run(
+                param,
+                cwd=self.repo_path,
+                text=True,
+                check=False,
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            ).stdout
+            files = []
+            for line in result.splitlines():
+                files.append(line[3:])
+
+            with open(diff_file, "w", encoding="utf-8") as df:
+                for f in files:
+                    df.write(f + "\n")
+
+            self.log_queue.put(f"差分ファイル出力: {diff_file}")
+            # HEADのコピー
+            self.file_copy_from_commit("HEAD", diff_file)
+            # ローカルのコピー
+            self.file_copy_from_local(diff_file)
 
             # 完了通知
             self.log_queue.put("完了しました")
@@ -409,50 +501,66 @@ class GitDiffApp(tk.Tk):
         ローカルのファイルをそのままコピーする
         未コミットの変更をコピーするため
         """
-        with open(diff_file, encoding='utf-8') as f:
+        with open(diff_file, encoding="utf-8") as f:
             rel_paths = [line.strip() for line in f if line.strip()]
-        
+        dbex = dbexp.DbExcludedPath()
+        exclude_path = dbex.get_excluded_paths(self.ws_name)
+        exclude_path += const.EXCEPT_PATH
         for path in rel_paths:
-            # 無効な文字を排除
-            path = re.sub(r'[\\/:*?"<>|]+','',path)
             # 除外対象はスキップ
-            if (ex in path for ex in const.EXCEPT_PATH):
+            if any(ex in path for ex in exclude_path):
                 self.log_queue.put(f"スキップ - :除外対象文字列含む({path})")
                 continue
-            from_path = os.path.join(self.repo_path,path)
+            from_path = os.path.join(self.repo_path, path)
             target_file = os.path.join(self.diff_dir, const.LOCAL_CHANGE, path)
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
             try:
-                shutil.copy2(from_path, target_file)
-                self.log_queue.put(f"{const.LOCAL_CHANGE}: コピー成功 - {from_path}")
+                if os.path.exists(from_path):
+                    shutil.copy2(from_path, target_file)
+                    self.log_queue.put(
+                        f"{const.LOCAL_CHANGE}: コピー成功 - {from_path}"
+                    )
+                else:
+                    self.log_queue.put(
+                        f"{const.LOCAL_CHANGE}: スキップ - {from_path} (存在しません)"
+                    )
             except Exception as e:
                 self.log_queue.put(f"スキップ - エラー：{e}({from_path})")
 
-
-    def file_copy_from_commit(self, branch, diff_file):
+    def file_copy_from_commit(self, commit, diff_file):
         """
         コミット済みの内容からファイルをコピー
         """
-        safe_branch = re.sub(r"[^\w.-]", "-", branch)
+        safe_branch = re.sub(r"[^\w.-]", "-", commit)
         branch_dir = os.path.join(self.diff_dir, safe_branch)
         os.makedirs(branch_dir, exist_ok=True)
 
         with open(diff_file, encoding="utf-8") as f:
             for line in f:
                 rel_path = line.strip()
-                branch_src = f"{branch}:{rel_path}"
+                branch_src = f"{commit}:{rel_path}"
                 dest = os.path.join(branch_dir, rel_path)
+
+                dbex = dbexp.DbExcludedPath()
+                exclude_path = dbex.get_excluded_paths(self.ws_name)
+                exclude_path += const.EXCEPT_PATH
+                # 除外対象はスキップ
+                if any(ex in rel_path for ex in exclude_path):
+                    self.log_queue.put(f"スキップ - :除外対象文字列含む({rel_path})")
+                    continue
 
                 try:
                     ret = (
                         subprocess.run(
-                            ["git", "ls-tree", "--name-only", branch, "--", rel_path],
+                            ["git", "ls-tree", "--name-only", commit, "--", rel_path],
                             cwd=self.repo_path,
                             capture_output=True,
                             text=True,
+                            creationflags=subprocess.CREATE_NO_WINDOW,
                         ).stdout
                         or ""
                     ).strip()
+
                     if ret == rel_path:
                         os.makedirs(os.path.dirname(dest), exist_ok=True)
                         subprocess.run(
@@ -460,14 +568,15 @@ class GitDiffApp(tk.Tk):
                             cwd=self.repo_path,
                             text=True,
                             stdout=open(dest, "w"),
+                            creationflags=subprocess.CREATE_NO_WINDOW,
                         )
-                        self.log_queue.put(f"{branch}: コピー成功 - {rel_path}")
+                        self.log_queue.put(f"{commit}: コピー成功 - {rel_path}")
                     else:
                         self.log_queue.put(
-                            f"{branch}: スキップ - {rel_path} (存在しません)"
+                            f"{commit}: スキップ - {rel_path} (存在しません)"
                         )
                 except Exception as e:
-                    self.log_queue.put(f"{branch}: コピー失敗 - {rel_path} ({e})")
+                    self.log_queue.put(f"{commit}: コピー失敗 - {rel_path} ({e})")
 
     def checkout_and_copy(self, branch, diff_file):
         """
@@ -477,7 +586,11 @@ class GitDiffApp(tk.Tk):
         branch_dir = os.path.join(self.diff_dir, safe_branch)
         os.makedirs(branch_dir, exist_ok=True)
 
-        subprocess.run(["git", "switch", branch], cwd=self.repo_path)
+        subprocess.run(
+            ["git", "switch", branch],
+            cwd=self.repo_path,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
 
         with open(diff_file, encoding="utf-8") as f:
             for line in f:
@@ -500,8 +613,13 @@ class GitDiffApp(tk.Tk):
         """
         最後の比較結果フォルダを開く
         """
-        if self.diff_dir != '':
+        if self.diff_dir != "":
             os.startfile(self.diff_dir)
+        elif not os.path.isdir(self.diff_dir):
+            messagebox.showerror(
+                "エラー", f"出力ディレクトリが存在しません\npath:{self.diff_dir}"
+            )
+            return
         else:
             self.log("まだ比較をしていません")
             messagebox.showerror("エラー", "まだ比較をしていません")
@@ -521,6 +639,11 @@ class GitDiffApp(tk.Tk):
         if not self.diff_dir:
             messagebox.showerror("エラー", "出力ディレクトリが未作成です")
             return
+        if not os.path.isdir(self.diff_dir):
+            messagebox.showerror(
+                "エラー", f"出力ディレクトリが存在しません\npath:{self.diff_dir}"
+            )
+            return
         log_file = os.path.join(
             self.diff_dir, datetime.now().strftime("%Y%m%d%H%M%S") + ".log"
         )
@@ -533,7 +656,10 @@ class GitDiffApp(tk.Tk):
         現在のブランチを取得
         """
         ret = subprocess.run(
-            ["git", "branch", "--contains"], cwd=self.repo_path, capture_output=True
+            ["git", "branch", "--contains"],
+            cwd=self.repo_path,
+            capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
         tmp = ret.stdout
         return tmp.strip(b"* \n").decode("utf-8")
