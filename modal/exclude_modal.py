@@ -31,6 +31,8 @@ class SettingWorkspaceModal(tk.Toplevel):
 
         ws_select_button = ttk.Button(self, text="設定", command=self._set_workspace_settings)
         ws_select_button.grid(row=2, column=9, padx=5,pady=5)
+        # ウィンドウサイズと位置の設定
+        self.geometry(f"+{const.EXC_GEO['x']}+{const.EXC_GEO['y']}")
 
     def _get_ws_list(self):
         db = dbws.DbWorkspace()

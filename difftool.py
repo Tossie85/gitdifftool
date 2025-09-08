@@ -202,6 +202,8 @@ class GitDiffApp(tk.Tk):
 
         # ウィンドウサイズ変更抑止
         self.resizable(0, 0)
+        # ウィンドウサイズと位置の設定
+        self.geometry(f"+{const.MAIN_GEO['x']}+{const.MAIN_GEO['y']}")
 
     def create_menus(self):
         """
@@ -342,6 +344,7 @@ class GitDiffApp(tk.Tk):
                 cwd=self.repo_path,
                 text=True,
                 encoding="utf-8",
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
             commit_lines = [line for line in result.splitlines()]
             commits = []

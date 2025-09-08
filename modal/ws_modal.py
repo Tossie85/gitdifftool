@@ -45,6 +45,9 @@ class SelectWorkspaceModal(tk.Toplevel):
 
         ws_select_button = ttk.Button(self, text="選択", command=self._select_workspace)
         ws_select_button.pack(expand=True)
+        # ウィンドウサイズと位置の設定
+        self.geometry(f"+{const.WS_GEO['x']}+{const.WS_GEO['y']}")
+
         # バツボタンクリック時のハンドラ
         self.protocol("WM_DELETE_WINDOW", self._click_close)
         self.wait_window()
