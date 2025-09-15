@@ -42,11 +42,12 @@ class DbExcludedPath(dbs.DbBase):
                 insert_values += f"('{ws_name}','{path}', {type}, '{self.get_now_string()}', '{self.get_now_string()}')\n,"
             # 最後のカンマだけ取り除く
             insert_values = insert_values[:-1]
-            insert_sql = f"""
-                INSERT INTO {TB_NAME} (ws_name, excluded_path, type, created_dt, updated_dt) VALUES  
-                {insert_values};
-            """
-            cursor.execute(insert_sql)
+            if insert_values:
+                insert_sql = f"""
+                    INSERT INTO {TB_NAME} (ws_name, excluded_path, type, created_dt, updated_dt) VALUES  
+                    {insert_values};
+                """
+                cursor.execute(insert_sql)
             conn.commit()
         except Exception as e:
             # エラー時はロールバックする
