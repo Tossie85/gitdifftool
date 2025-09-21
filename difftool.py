@@ -64,6 +64,12 @@ class GitDiffApp(tk.Tk):
         self.ws_name = ""
         self.branch1_combo.set("")
         self.branch2_combo.set("")
+        # 処理中フラグ
+        self.is_running = False
+        # 一時停止処理のためのイベント
+        self.paused = threading.Event()
+        self.paused.set()
+        self.is_abandoned = False # 中断フラグ
 
     def load_settings(self):
         """
@@ -178,23 +184,34 @@ class GitDiffApp(tk.Tk):
             value=SELECT_DIFF_PRECOMMIT,
             variable=self.diff_radio_value,
         ).grid(row=7, column=3, padx=5, pady=2)
+
+        tk.Button(self, text="一時停止", command=self.pause, width=10).grid(    
+            row=8, column=1, padx=5, pady=2
+        )    
+
+        tk.Button(self, text="再開", command=self.resume, width=10).grid(    
+            row=8, column=2, padx=5, pady=2
+        )   
+        tk.Button(self, text="中断", command=self.stop, width=10).grid(    
+            row=8, column=3, padx=5, pady=2
+        )
         tk.Button(self, text="実行", command=self.execute, width=10).grid(
-            row=7, column=6, padx=5, pady=2
+            row=8, column=6, padx=5, pady=2
         )
 
         # ログ表示（リアルタイム追記用）
         self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
-        self.log_text.grid(row=8, column=0, columnspan=7, padx=5, pady=2)
+        self.log_text.grid(row=9, column=0, columnspan=7, padx=5, pady=2)
 
         tk.Button(self, text="結果を開く", command=self.open_result, width=10).grid(
-            row=9, column=0, padx=5, pady=2
+            row=10, column=0, padx=5, pady=2
         )
 
         tk.Button(self, text="ログクリア", command=self.clear_log, width=10).grid(
-            row=9, column=5, padx=5, pady=2
+            row=10, column=5, padx=5, pady=2
         )
         tk.Button(self, text="ログ保存", command=self.save_log, width=10).grid(
-            row=9, column=6, padx=5, pady=2
+            row=10, column=6, padx=5, pady=2
         )
 
         # メニューの設定
@@ -372,6 +389,14 @@ class GitDiffApp(tk.Tk):
         TODO: gitコマンドの実行ログを出力する
         TODO: gitコマンドの実行でエラーが発生したときのエラー処理を追加する
         """
+        if self.is_running:
+            messagebox.showinfo("情報", "現在処理中です。しばらくお待ちください。")
+            return
+        # 処理中フラグを立てる
+        self.is_running = True
+        self.is_abandoned = False # 中断フラグを解除
+        self.paused.set()  # 一時停止解除
+
         try:
             self.repo_path = self.git_folder_entry.get()
             self.output_path = self.output_folder_entry.get()
@@ -413,6 +438,7 @@ class GitDiffApp(tk.Tk):
                 # diff1, diff2 = "HEAD", ""
                 diff_file = os.path.join(self.diff_dir, f"diff_local_changed.txt")
 
+
             # 重い処理は別スレッドで実行
             if diff_ways != SELECT_DIFF_PRECOMMIT:
                 print(diff_file)
@@ -429,6 +455,32 @@ class GitDiffApp(tk.Tk):
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"実行エラー: {e}")
 
+    def pause(self):
+        """
+        処理の一時停止
+        """
+        if self.is_running:
+            self.paused.clear()  # 一時停止
+            self.log_queue.put("処理を一時停止しました")
+    
+    def resume(self):
+        """
+        処理の再開
+        """
+        if self.is_running:
+            self.paused.set()  # 再開
+            self.log_queue.put("処理を再開しました")
+    
+    def stop(self):
+        """
+        処理の中断
+        """
+        if self.is_running:
+            self.is_running = False
+            self.is_abandoned = True # 中断フラグを立てる
+            self.paused.set()  # 一時停止解除
+            self.log_queue.put("処理を中断しました")
+
     def _execute_worker(self, diff1, diff2, diff_file):
         try:
             # 差分一覧ファイルを作成
@@ -443,12 +495,17 @@ class GitDiffApp(tk.Tk):
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
-            # ブランチ1のコピー
+            # コミット1のコピー
             self.file_copy_from_commit(diff1, diff_file)
-            # ブランチ2のコピー
+            # コミット2のコピー
             self.file_copy_from_commit(diff2, diff_file)
 
             # 完了通知
+            self.is_running = False
+            if self.is_abandoned:
+                self.log_queue.put("処理が中断されました")
+                return
+            
             self.log_queue.put("完了しました")
             self.log_queue.put(self.diff_dir)
 
@@ -490,6 +547,10 @@ class GitDiffApp(tk.Tk):
             self.file_copy_from_local(diff_file)
 
             # 完了通知
+            self.is_running = False
+            if self.is_abandoned:
+                self.log_queue.put("処理が中断されました")
+                return
             self.log_queue.put("完了しました")
             self.log_queue.put(self.diff_dir)
 
@@ -511,6 +572,9 @@ class GitDiffApp(tk.Tk):
         exclude_path = dbex.get_excluded_paths(self.ws_name)
         exclude_path += const.EXCEPT_PATH
         for path in rel_paths:
+            if self.is_running is False:
+                return
+            self.paused.wait()  # 一時停止中はここで待機
             # 除外対象はスキップ
             if any(ex in path for ex in exclude_path):
                 self.log_queue.put(f"スキップ - :除外対象文字列含む({path})")
@@ -541,6 +605,9 @@ class GitDiffApp(tk.Tk):
 
         with open(diff_file, encoding="utf-8") as f:
             for line in f:
+                if self.is_running is False:
+                    return
+                self.paused.wait()  # 一時停止中はここで待機
                 rel_path = line.strip()
                 branch_src = f"{commit}:{rel_path}"
                 dest = os.path.join(branch_dir, rel_path)
