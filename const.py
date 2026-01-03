@@ -1,5 +1,5 @@
 APP_NAME = 'ぎっとさぶん (diff and copy tool for git project)'
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 
 COMMIT_NUMS = 50
 LOCAL_CHANGE = 'local_change'
