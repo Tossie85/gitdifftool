@@ -127,20 +127,22 @@ class GitDiffApp(tk.Tk):
         tk.Label(self, text="gitフォルダ", width=12).grid(
             row=0, column=0, padx=5, pady=2
         )
+        # gitフォルダ選択テキスト
         self.git_folder_entry = tk.Entry(self, width=74)
         self.git_folder_entry.grid(row=0, column=1, columnspan=5, padx=5, pady=2)
-        tk.Button(self, text="選択", command=self.select_git_folder, width=10).grid(
-            row=0, column=6, padx=5, pady=2
-        )
+        
+        # gitフォルダ選択ボタン
+        self.select_git_folder_button = tk.Button(self, text="選択", command=self.select_git_folder, width=10)
+        self.select_git_folder_button.grid(row=0, column=6, padx=5, pady=2)
 
-        tk.Label(self, text="出力フォルダ", width=12).grid(
-            row=1, column=0, padx=5, pady=2
-        )
+        tk.Label(self, text="出力フォルダ", width=12).grid(row=1, column=0, padx=5, pady=2)
+
+        # 出力先フォルダ選択テキスト
         self.output_folder_entry = tk.Entry(self, width=74)
         self.output_folder_entry.grid(row=1, column=1, columnspan=5, padx=5, pady=2)
-        tk.Button(self, text="選択", command=self.select_output_folder, width=10).grid(
-            row=1, column=6, padx=5, pady=2
-        )
+        # 出力先フォルダ選択ボタン
+        self.select_output_folder_button = tk.Button(self, text="選択", command=self.select_output_folder, width=10)
+        self.select_output_folder_button.grid(row=1, column=6, padx=5, pady=2)
 
         tk.Label(self, text="ブランチ情報", width=12).grid(
             row=3, column=0, padx=5, pady=2
@@ -149,70 +151,76 @@ class GitDiffApp(tk.Tk):
         self.branch1_combo.grid(row=3, column=1, columnspan=5, padx=5, pady=2)
         self.branch2_combo = ttk.Combobox(self, width=74)
         self.branch2_combo.grid(row=4, column=1, columnspan=5, padx=5, pady=2)
-        tk.Button(
-            self, text="ブランチ更新", command=self.update_branches, height=2, width=10
-        ).grid(row=3, column=6, rowspan=2, padx=5, pady=2)
+        # ブランチ更新ボタン
+        self.update_branch_button = tk.Button(self, text="ブランチ更新", command=self.update_branches, height=2, width=10)
+        self.update_branch_button.grid(row=3, column=6, rowspan=2, padx=5, pady=2)
 
-        tk.Label(self, text="コミット情報", width=12).grid(
-            row=5, column=0, padx=5, pady=2
-        )
+        tk.Label(self, text="コミット情報", width=12).grid(row=5, column=0, padx=5, pady=2)
+        
         self.commit1_combo = ttk.Combobox(self, width=74)
         self.commit1_combo.grid(row=5, column=1, columnspan=5, padx=5, pady=2)
         self.commit2_combo = ttk.Combobox(self, width=74)
         self.commit2_combo.grid(row=6, column=1, columnspan=5, padx=5, pady=2)
-        tk.Button(
+        # コミット更新ボタン
+        self.update_commit_button = tk.Button(
             self, text="コミット更新", command=self.update_commits, height=2, width=10
-        ).grid(row=5, column=6, rowspan=2, padx=5, pady=2)
+        )
+        self.update_commit_button.grid(row=5, column=6, rowspan=2, padx=5, pady=2)
 
         self.diff_radio_value = tk.IntVar(value=SELECT_DIFF_BRANCH)
         tk.Label(self, text="比較", width=12).grid(row=7, column=0, padx=5, pady=2)
+        
         self.branch_radio = ttk.Radiobutton(
             self,
             text="ブランチ間比較",
             value=SELECT_DIFF_BRANCH,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=1, padx=5, pady=2)
+        )
+        self.branch_radio.grid(row=7, column=1, padx=5, pady=2)
+        
         self.commit_radio = ttk.Radiobutton(
             self,
             text="コミット間比較",
             value=SELECT_DIFF_COMMIT,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=2, padx=5, pady=2)
-        self.commit_radio = ttk.Radiobutton(
+        )
+        self.commit_radio.grid(row=7, column=2, padx=5, pady=2)
+
+        self.uncommitted_radio = ttk.Radiobutton(
             self,
             text="未コミット比較",
             value=SELECT_DIFF_PRECOMMIT,
             variable=self.diff_radio_value,
-        ).grid(row=7, column=3, padx=5, pady=2)
-
-        tk.Button(self, text="一時停止", command=self.pause, width=10).grid(    
-            row=8, column=1, padx=5, pady=2
-        )    
-
-        tk.Button(self, text="再開", command=self.resume, width=10).grid(    
-            row=8, column=2, padx=5, pady=2
-        )   
-        tk.Button(self, text="中断", command=self.stop, width=10).grid(    
-            row=8, column=3, padx=5, pady=2
         )
-        tk.Button(self, text="実行", command=self.execute, width=10).grid(
-            row=8, column=6, padx=5, pady=2
-        )
+        self.uncommitted_radio.grid(row=7, column=3, padx=5, pady=2)
+        # 一時停止ボタン
+        self.pause_button = tk.Button(self, text="一時停止", command=self.pause, width=10)
+        self.pause_button.grid(row=8, column=1, padx=5, pady=2)    
+        # 再開ボタン
+        self.restart_button = tk.Button(self, text="再開", command=self.resume, width=10)
+        self.restart_button.grid(row=8, column=2, padx=5, pady=2)
+        # 停止ボタン
+        self.stop_button = tk.Button(self, text="中断", command=self.stop, width=10)
+        self.stop_button.grid(row=8, column=3, padx=5, pady=2)
+        # 実行ボタン
+        self.execute_button = tk.Button(self, text="実行", command=self.execute, width=10)
+        self.execute_button.grid(row=8, column=6, padx=5, pady=2)
 
         # ログ表示（リアルタイム追記用）
         self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
         self.log_text.grid(row=9, column=0, columnspan=7, padx=5, pady=2)
 
-        tk.Button(self, text="結果を開く", command=self.open_result, width=10).grid(
-            row=10, column=0, padx=5, pady=2
-        )
+        # 結果を開くボタン
+        self.show_result_button = tk.Button(self, text="結果を開く", command=self.open_result, width=10)
+        self.show_result_button.grid(row=10, column=0, padx=5, pady=2)
 
-        tk.Button(self, text="ログクリア", command=self.clear_log, width=10).grid(
-            row=10, column=5, padx=5, pady=2
-        )
-        tk.Button(self, text="ログ保存", command=self.save_log, width=10).grid(
-            row=10, column=6, padx=5, pady=2
-        )
+        # ログクリアボタン
+        self.clear_log_button = tk.Button(self, text="ログクリア", command=self.clear_log, width=10)
+        self.clear_log_button.grid(row=10, column=5, padx=5, pady=2)
+
+        # ログ保存ボタン
+        self.save_log_button = tk.Button(self, text="ログ保存", command=self.save_log, width=10)
+        self.save_log_button.grid(row=10, column=6, padx=5, pady=2)
 
         # メニューの設定
         self.create_menus()
@@ -222,17 +230,20 @@ class GitDiffApp(tk.Tk):
         # ウィンドウサイズと位置の設定
         self.geometry(f"+{const.MAIN_GEO['x']}+{const.MAIN_GEO['y']}")
 
+        self._set_waiting_status()
+
+
     def create_menus(self):
         """
         メニューの設定
         """
-        menubar = tk.Menu(self)
-        self.config(menu=menubar)
-        setting_menu = tk.Menu(menubar, tearoff=False)
-        menubar.add_cascade(label="設定", menu=setting_menu)
+        self.menubar = tk.Menu(self)
+        self.config(menu=self.menubar)
+        self.setting_menu = tk.Menu(self.menubar, tearoff=False)
+        self.menubar.add_cascade(label="設定", menu=self.setting_menu)
         # ワークスペースメニュ
-        workspace_menu = tk.Menu(setting_menu, tearoff=False)
-        setting_menu.add_cascade(label="ワークスペース", menu=workspace_menu)
+        workspace_menu = tk.Menu(self.setting_menu, tearoff=False)
+        self.setting_menu.add_cascade(label="ワークスペース", menu=workspace_menu)
         # メニュにアクションを追加
         workspace_menu.add_command(
             label=f"{const.TITLE_SELECT_WORKSPACE}",
@@ -242,6 +253,69 @@ class GitDiffApp(tk.Tk):
             label=f"{const.TITLE_EXCLUDE_SETTING}",
             command=self.show_exclude_path_setting_modal,
         )
+
+    def _set_execute_status(self):
+        """
+        実行時状態
+        """
+
+        self.git_folder_entry.config(state = tk.DISABLED)
+        self.select_git_folder_button.config(state = tk.DISABLED)
+        
+        self.output_folder_entry.config(state = tk.DISABLED)
+        self.select_output_folder_button.config(state = tk.DISABLED)
+        
+        self.branch1_combo.config(state = tk.DISABLED)
+        self.branch2_combo.config(state = tk.DISABLED)
+        self.update_branch_button.config(state = tk.DISABLED)
+
+        self.commit1_combo.config(state = tk.DISABLED)
+        self.commit2_combo.config(state = tk.DISABLED)
+        self.update_commit_button.config(state = tk.DISABLED)
+
+        self.branch_radio.config(state = tk.DISABLED)
+        self.commit_radio.config(state = tk.DISABLED)
+        self.uncommitted_radio.config(state = tk.DISABLED)
+
+        self.pause_button.config(state = tk.NORMAL)
+        self.restart_button.config(state = tk.NORMAL)
+        self.stop_button.config(state = tk.NORMAL)
+
+        self.execute_button.config(state = tk.DISABLED)
+        self.show_result_button.config(state = tk.DISABLED)
+        self.clear_log_button.config(state = tk.DISABLED)
+        self.save_log_button.config(state = tk.DISABLED)
+
+    def _set_waiting_status(self):
+        """
+        待機状態
+        """
+        self.git_folder_entry.config(state = tk.NORMAL)
+        self.select_git_folder_button.config(state = tk.NORMAL)
+        
+        self.output_folder_entry.config(state = tk.NORMAL)
+        self.select_output_folder_button.config(state = tk.NORMAL)
+        
+        self.branch1_combo.config(state = tk.NORMAL)
+        self.branch2_combo.config(state = tk.NORMAL)
+        self.update_branch_button.config(state = tk.NORMAL)
+
+        self.commit1_combo.config(state = tk.NORMAL)
+        self.commit2_combo.config(state = tk.NORMAL)
+        self.update_commit_button.config(state = tk.NORMAL)
+        
+        self.branch_radio.config(state = tk.NORMAL)
+        self.commit_radio.config(state = tk.NORMAL)
+        self.uncommitted_radio.config(state = tk.NORMAL)
+
+        self.pause_button.config(state = tk.DISABLED)
+        self.restart_button.config(state = tk.DISABLED)
+        self.stop_button.config(state = tk.DISABLED)
+
+        self.execute_button.config(state = tk.NORMAL)
+        self.show_result_button.config(state = tk.NORMAL)
+        self.clear_log_button.config(state = tk.NORMAL)
+        self.save_log_button.config(state = tk.NORMAL)
 
     def show_select_workspace_modal(self):
         """
@@ -253,7 +327,7 @@ class GitDiffApp(tk.Tk):
         """
         コピー対象外パス設定モーダルを開く
         """
-        self.ws_modal = exclude_modal.SettingWorkspaceModal(self, self.exclude_modal)
+        self.exclude_modal = exclude_modal.SettingWorkspaceModal(self, self.after_exclude_modal)
 
     def after_ws_modal(self, value):
         """
@@ -265,7 +339,7 @@ class GitDiffApp(tk.Tk):
             if self.ws_name == "":
                 self.destroy()
 
-    def exclude_modal(self, value):
+    def after_exclude_modal(self, value):
         """
         ワークスペース設定モーダルコールバック
         """
@@ -285,7 +359,9 @@ class GitDiffApp(tk.Tk):
         self.log_text.update_idletasks()
 
     def update_log(self):
-        """スレッドからのメッセージを処理"""
+        """
+        スレッドからのメッセージを処理
+        """
         while not self.log_queue.empty():
             message = self.log_queue.get()
             self.log(message)
@@ -392,6 +468,8 @@ class GitDiffApp(tk.Tk):
         if self.is_running:
             messagebox.showinfo("情報", "現在処理中です。しばらくお待ちください。")
             return
+        self._set_execute_status()
+
         # 処理中フラグを立てる
         self.is_running = True
         self.is_abandoned = False # 中断フラグを解除
@@ -452,6 +530,11 @@ class GitDiffApp(tk.Tk):
                     target=self._execute_worker_local, args=(diff_file,), daemon=True
                 ).start()
         except Exception as e:
+            if self.is_running:
+                self.is_running = False
+                self.is_abandoned = True # 中断フラグを立てる
+                self.paused.set()  # 一時停止解除
+                self._set_waiting_status()
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"実行エラー: {e}")
 
@@ -483,6 +566,8 @@ class GitDiffApp(tk.Tk):
 
     def _execute_worker(self, diff1, diff2, diff_file):
         try:
+            # 実行時状態にする
+            self._set_execute_status()
             # 差分一覧ファイルを作成
             param = ["git", "diff", "--name-only", diff1, diff2]
             with open(diff_file, "w", encoding="utf-8") as df:
@@ -508,6 +593,8 @@ class GitDiffApp(tk.Tk):
             
             self.log_queue.put("完了しました")
             self.log_queue.put(self.diff_dir)
+            # 待機状態に戻す
+            self._set_waiting_status()
 
             if messagebox.askyesno(
                 "完了", f"作業フォルダを開きますか？\n{self.diff_dir}"
