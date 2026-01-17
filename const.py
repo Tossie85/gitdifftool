@@ -1,7 +1,10 @@
 APP_NAME = 'ぎっとさぶん (diff and copy tool for git project)'
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
+# 取得する差分コミット数の上限
 COMMIT_NUMS = 50
+# 確認対象とする差分ファイル数の上限
+DIFF_FILE_CONFIRM_LINES = 20
 LOCAL_CHANGE = 'local_change'
 
 EXCEPT_PATH = [
@@ -11,6 +14,7 @@ EXCEPT_PATH = [
 # TITLE
 TITLE_EXCLUDE_SETTING = 'コピー対象外設定'
 TITLE_SELECT_WORKSPACE = 'ワークスペース選択'
+TITLE_USER_SETTINGS = 'ユーザー設定'
 # user_settingsのキー名
 US_KEY_CURRENT_WS = 'current_workspace'
 US_KEY_DEFAULT_WS = 'default_workspace'

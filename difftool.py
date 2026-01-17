@@ -580,6 +580,11 @@ class GitDiffApp(tk.Tk):
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
+
+            # 差分ファイルの行数確認
+            lines = self._get_file_lines(diff_file)
+            if not self._confirm_get_diff_files(lines):
+                return
             # コミット1のコピー
             self.file_copy_from_commit(diff1, diff_file)
             # コミット2のコピー
@@ -628,6 +633,12 @@ class GitDiffApp(tk.Tk):
                     df.write(f + "\n")
 
             self.log_queue.put(f"差分ファイル出力: {diff_file}")
+
+            # 差分ファイルの行数確認
+            lines = self._get_file_lines(diff_file)
+            if not self._confirm_get_diff_files(lines):
+                return
+
             # HEADのコピー
             self.file_copy_from_commit("HEAD", diff_file)
             # ローカルのコピー
@@ -822,6 +833,29 @@ class GitDiffApp(tk.Tk):
         tmp = ret.stdout
         return tmp.strip(b"* \n").decode("utf-8")
 
+    def _get_file_lines(self, file_path):
+        """
+        gitコマンドで取得した差分ファイルの行数を取得
+        """
+        return sum(1 for line in open(file_path))
+
+    def _confirm_get_diff_files(self, lines):
+        """
+        差分ファイルの件数を確認し、処理を続行するか確認
+
+        Args:
+            lines (int): 差分ファイルの行数 
+        """
+        if lines >= const.DIFF_FILE_CONFIRM_LINES:
+            if messagebox.askyesno(
+                "確認", f"{lines}件の差分が見つかりました。処理を続行しますか？"
+            ) is False:
+                self.is_running = False
+                self.is_abandoned = True
+                self.log_queue.put("処理が中断されました")
+                self._set_waiting_status()
+                return False
+            return True
 
 if __name__ == "__main__":
     app = GitDiffApp()
