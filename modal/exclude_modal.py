@@ -9,22 +9,21 @@ import db.db_excluded_path as dbexp
 import const
 
 class SettingWorkspaceModal(tk.Toplevel):
-    def __init__(self, parent, callback):
+    def __init__(self, parent, callback, xpos, ypos):
         super().__init__(parent)
         self.title(f"{const.APP_NAME}：{const.TITLE_EXCLUDE_SETTING}")
-        # self.geometry("500x150")
         self.transient(parent)
         self.callback = callback
         self.grab_set()
 
-        self._crate_widgets()
+        self._crate_widgets(xpos=xpos, ypos=ypos)
         self._load_settings()
 
         # バツボタンクリック時のハンドラ
         self.protocol("WM_DELETE_WINDOW", self._click_close)
         self.wait_window()
 
-    def _crate_widgets(self):
+    def _crate_widgets(self,xpos, ypos):
         tk.Label(self, text="対象外とするパスの一部を改行区切りで入力してください。").grid(row=0, column=0, columnspan=5, padx=5,pady=5)
         self.exclude_list = scrolledtext.ScrolledText(self, height=20)
         self.exclude_list.grid(row=1, column=0,columnspan=10, padx=5,pady=5)
@@ -32,7 +31,7 @@ class SettingWorkspaceModal(tk.Toplevel):
         ws_select_button = ttk.Button(self, text="設定", command=self._set_workspace_settings)
         ws_select_button.grid(row=2, column=9, padx=5,pady=5)
         # ウィンドウサイズと位置の設定
-        self.geometry(f"+{const.EXC_GEO['x']}+{const.EXC_GEO['y']}")
+        self.geometry(f"+{xpos}+{ypos}")
 
     def _get_ws_list(self):
         db = dbws.DbWorkspace()

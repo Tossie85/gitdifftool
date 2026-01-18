@@ -7,7 +7,7 @@ import db.db_user_settings as dbus
 import const
 
 class SelectWorkspaceModal(tk.Toplevel):
-    def __init__(self, parent, callback):
+    def __init__(self, parent, callback, xpos, ypos):
         super().__init__(parent)
         self.title(f"{const.APP_NAME}：{const.TITLE_SELECT_WORKSPACE}")
         self.parent = parent
@@ -46,7 +46,7 @@ class SelectWorkspaceModal(tk.Toplevel):
         ws_select_button = ttk.Button(self, text="選択", command=self._select_workspace)
         ws_select_button.pack(expand=True)
         # ウィンドウサイズと位置の設定
-        self.geometry(f"+{const.WS_GEO['x']}+{const.WS_GEO['y']}")
+        self.geometry(f"+{xpos}+{ypos}")
 
         # バツボタンクリック時のハンドラ
         self.protocol("WM_DELETE_WINDOW", self._click_close)

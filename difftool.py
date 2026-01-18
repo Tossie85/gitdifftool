@@ -13,6 +13,7 @@ import db.db_branches as dbbr
 import db.db_commits as dbco
 import db.db_user_settings as dbus
 import db.db_excluded_path as dbexp
+from modal import user_settings_modal
 import modal.ws_modal as ws_modal
 import modal.exclude_modal as exclude_modal
 import const
@@ -243,7 +244,7 @@ class GitDiffApp(tk.Tk):
         self.menubar.add_cascade(label="設定", menu=self.setting_menu)
         # ワークスペースメニュ
         workspace_menu = tk.Menu(self.setting_menu, tearoff=False)
-        self.setting_menu.add_cascade(label="ワークスペース", menu=workspace_menu)
+        self.setting_menu.add_cascade(label=const.TITLE_WORKSPACE, menu=workspace_menu)
         # メニュにアクションを追加
         workspace_menu.add_command(
             label=f"{const.TITLE_SELECT_WORKSPACE}",
@@ -252,6 +253,10 @@ class GitDiffApp(tk.Tk):
         workspace_menu.add_command(
             label=f"{const.TITLE_EXCLUDE_SETTING}",
             command=self.show_exclude_path_setting_modal,
+        )
+        self.setting_menu.add_command(
+            label=f"{const.TITLE_USER_SETTINGS}",
+            command=self.show_user_settings_modal,
         )
 
     def _set_execute_status(self):
@@ -321,14 +326,32 @@ class GitDiffApp(tk.Tk):
         """
         ワークスペース選択モーダルを開く
         """
-        self.ws_modal = ws_modal.SelectWorkspaceModal(self, self.after_ws_modal)
+        parent_width = self.winfo_width()
+        parent_height = self.winfo_height()
+        xpos = self.winfo_x() + (parent_width // 2) - const.WS_GEO['width'] // 2
+        ypos = self.winfo_y() + (parent_height // 2) - const.WS_GEO['height'] // 2
+        self.ws_modal = ws_modal.SelectWorkspaceModal(self, self.after_ws_modal, xpos, ypos)
 
     def show_exclude_path_setting_modal(self):
         """
         コピー対象外パス設定モーダルを開く
         """
-        self.exclude_modal = exclude_modal.SettingWorkspaceModal(self, self.after_exclude_modal)
+        parent_width = self.winfo_width()
+        parent_height = self.winfo_height()
+        xpos = self.winfo_x() + (parent_width // 2) - const.EXC_GEO['width'] // 2
+        ypos = self.winfo_y() + (parent_height // 2) - const.EXC_GEO['height'] // 2
+        self.exclude_modal = exclude_modal.SettingWorkspaceModal(self, self.after_exclude_modal, xpos, ypos)
 
+    def show_user_settings_modal(self):
+        """
+        ユーザー設定モーダルを開く
+        """
+        parent_width = self.winfo_width()
+        parent_height = self.winfo_height()
+        xpos = self.winfo_x() + (parent_width // 2) - const.US_GEO['width'] // 2
+        ypos = self.winfo_y() + (parent_height // 2) - const.US_GEO['height'] // 2
+        self.user_modal = user_settings_modal.UserSettingsModal(self, self.after_user_modal,xpos, ypos)
+        
     def after_ws_modal(self, value):
         """
         ワークスペース選択モーダルコールバック
@@ -347,6 +370,16 @@ class GitDiffApp(tk.Tk):
             self.log_queue.put(f"インフォ - :除外パス設定完了")
         if value == CALLBACK_UNSET_WS:
             self.log_queue.put(f"インフォ - :除外パス設定キャンセル")
+
+    def after_user_modal(self, value):
+        """
+        ユーザー設定モーダルコールバック
+        
+        """
+        if value == CALLBACK_SET_WS:
+            self.log_queue.put(f"インフォ - :ユーザー設定完了")
+        if value == CALLBACK_UNSET_WS:
+            self.log_queue.put(f"インフォ - :ユーザー設定キャンセル")
 
     def log(self, message):
         """
@@ -427,8 +460,9 @@ class GitDiffApp(tk.Tk):
             foption = f"--pretty=format:%h|||%cd|||%s|||%an"
             # 日付のフォーマット
             doption = f"--date=format:%Y-%m-%d %H:%M:%S"
-            # 取得件数 TODO: ユーザ設定で保存する予定
-            noption = f"-{const.COMMIT_NUMS}"
+            # 取得件数
+            noption = f"-{dbus.DbUserSettings().get_user_setting(const.US_KEY_COMMIT_NUM)}" if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_COMMIT_NUM) else f"-{const.DIFF_FILE_NUM_LIMIT}"
+            print (noption)
             # 全ブランチ
             boption = f"--all"
             # encodingオプションをつけないとエラーになる（cp932）
@@ -651,6 +685,8 @@ class GitDiffApp(tk.Tk):
                 return
             self.log_queue.put("完了しました")
             self.log_queue.put(self.diff_dir)
+            # 待機状態に戻す
+            self._set_waiting_status()
 
             if messagebox.askyesno(
                 "完了", f"作業フォルダを開きますか？\n{self.diff_dir}"
@@ -846,7 +882,8 @@ class GitDiffApp(tk.Tk):
         Args:
             lines (int): 差分ファイルの行数 
         """
-        if lines >= const.DIFF_FILE_CONFIRM_LINES:
+        limit = dbus.DbUserSettings().get_user_setting(const.US_KEY_DIFF_FILE_NUM) if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_DIFF_FILE_NUM) else const.DIFF_FILE_NUM_LIMIT
+        if lines >= int(limit):
             if messagebox.askyesno(
                 "確認", f"{lines}件の差分が見つかりました。処理を続行しますか？"
             ) is False:
@@ -856,6 +893,7 @@ class GitDiffApp(tk.Tk):
                 self._set_waiting_status()
                 return False
             return True
+        return True
 
 if __name__ == "__main__":
     app = GitDiffApp()
