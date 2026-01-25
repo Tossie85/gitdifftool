@@ -15,7 +15,7 @@ import db.db_user_settings as dbus
 import db.db_excluded_path as dbexp
 from modal import user_settings_modal
 import modal.ws_modal as ws_modal
-import modal.exclude_modal as exclude_modal
+import modal.copy_ignore_list_modal as copy_ignore_list_modal
 import const
 
 CALLBACK_SELECTED_WS = "selected_ws"
@@ -252,7 +252,7 @@ class GitDiffApp(tk.Tk):
         )
         workspace_menu.add_command(
             label=f"{const.TITLE_EXCLUDE_SETTING}",
-            command=self.show_exclude_path_setting_modal,
+            command=self.show_copy_ignore_list_setting_modal,
         )
         self.setting_menu.add_command(
             label=f"{const.TITLE_USER_SETTINGS}",
@@ -326,30 +326,30 @@ class GitDiffApp(tk.Tk):
         """
         ワークスペース選択モーダルを開く
         """
-        parent_width = self.winfo_width()
-        parent_height = self.winfo_height()
-        xpos = self.winfo_x() + (parent_width // 2) - const.WS_GEO['width'] // 2
-        ypos = self.winfo_y() + (parent_height // 2) - const.WS_GEO['height'] // 2
+        x_origin = self.winfo_x() if self.winfo_x() > 0 else const.MAIN_GEO['x']
+        y_origin = self.winfo_y() if self.winfo_y() > 0 else const.MAIN_GEO['y']
+        xpos = x_origin + const.MAIN_GEO['width'] // 2 - const.WS_GEO['width'] // 2
+        ypos = y_origin + const.MAIN_GEO['height'] // 2 - const.WS_GEO['height'] // 2
         self.ws_modal = ws_modal.SelectWorkspaceModal(self, self.after_ws_modal, xpos, ypos)
 
-    def show_exclude_path_setting_modal(self):
+    def show_copy_ignore_list_setting_modal(self):
         """
         コピー対象外パス設定モーダルを開く
         """
-        parent_width = self.winfo_width()
-        parent_height = self.winfo_height()
-        xpos = self.winfo_x() + (parent_width // 2) - const.EXC_GEO['width'] // 2
-        ypos = self.winfo_y() + (parent_height // 2) - const.EXC_GEO['height'] // 2
-        self.exclude_modal = exclude_modal.SettingWorkspaceModal(self, self.after_exclude_modal, xpos, ypos)
+        x_origin = self.winfo_x() if self.winfo_x() > 0 else const.MAIN_GEO['x']
+        y_origin = self.winfo_y() if self.winfo_y() > 0 else const.MAIN_GEO['y']
+        xpos = x_origin + const.MAIN_GEO['width'] // 2 - const.EXC_GEO['width'] // 2
+        ypos = y_origin + const.MAIN_GEO['height'] // 2 - const.EXC_GEO['height'] // 2
+        self.exclude_modal = copy_ignore_list_modal.SettingCopyIgnoreListModal(self, self.after_copy_ignore_list_setting_modal, xpos, ypos)
 
     def show_user_settings_modal(self):
         """
         ユーザー設定モーダルを開く
         """
-        parent_width = self.winfo_width()
-        parent_height = self.winfo_height()
-        xpos = self.winfo_x() + (parent_width // 2) - const.US_GEO['width'] // 2
-        ypos = self.winfo_y() + (parent_height // 2) - const.US_GEO['height'] // 2
+        x_origin = self.winfo_x() if self.winfo_x() > 0 else const.MAIN_GEO['x']
+        y_origin = self.winfo_y() if self.winfo_y() > 0 else const.MAIN_GEO['y']
+        xpos = x_origin + const.MAIN_GEO['width'] // 2 - const.US_GEO['width'] // 2
+        ypos = y_origin + const.MAIN_GEO['height'] // 2 - const.US_GEO['height'] // 2
         self.user_modal = user_settings_modal.UserSettingsModal(self, self.after_user_modal,xpos, ypos)
         
     def after_ws_modal(self, value):
@@ -362,9 +362,9 @@ class GitDiffApp(tk.Tk):
             if self.ws_name == "":
                 self.destroy()
 
-    def after_exclude_modal(self, value):
+    def after_copy_ignore_list_setting_modal(self, value):
         """
-        ワークスペース設定モーダルコールバック
+        コピー対象外パス設定モーダルコールバック
         """
         if value == CALLBACK_SET_WS:
             self.log_queue.put(f"インフォ - :除外パス設定完了")
@@ -374,7 +374,6 @@ class GitDiffApp(tk.Tk):
     def after_user_modal(self, value):
         """
         ユーザー設定モーダルコールバック
-        
         """
         if value == CALLBACK_SET_WS:
             self.log_queue.put(f"インフォ - :ユーザー設定完了")

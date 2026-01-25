@@ -46,7 +46,7 @@ class UserSettingsModal(tk.Toplevel):
         btn_save.pack(side=tk.RIGHT, padx=5, pady=5)
 
         # ウィンドウサイズと位置の設定
-        self.geometry(f"+{xpos}+{ypos}")
+        self.geometry(f"{const.US_GEO['width']}x{const.US_GEO['height']}+{xpos}+{ypos}")
 
     def _on_save(self):
         """

@@ -11,7 +11,7 @@ class SelectWorkspaceModal(tk.Toplevel):
         super().__init__(parent)
         self.title(f"{const.APP_NAME}：{const.TITLE_SELECT_WORKSPACE}")
         self.parent = parent
-        self.geometry("500x150")
+        self.geometry(f"{const.WS_GEO['width']}x{const.WS_GEO['height']}+{xpos}+{ypos}")
         self.transient(parent)
         self.callback = callback
         self.grab_set()

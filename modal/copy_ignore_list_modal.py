@@ -8,7 +8,7 @@ import db.db_user_settings as dbus
 import db.db_excluded_path as dbexp
 import const
 
-class SettingWorkspaceModal(tk.Toplevel):
+class SettingCopyIgnoreListModal(tk.Toplevel):
     def __init__(self, parent, callback, xpos, ypos):
         super().__init__(parent)
         self.title(f"{const.APP_NAME}：{const.TITLE_EXCLUDE_SETTING}")
@@ -31,7 +31,7 @@ class SettingWorkspaceModal(tk.Toplevel):
         ws_select_button = ttk.Button(self, text="設定", command=self._set_workspace_settings)
         ws_select_button.grid(row=2, column=9, padx=5,pady=5)
         # ウィンドウサイズと位置の設定
-        self.geometry(f"+{xpos}+{ypos}")
+        self.geometry(f"{const.EXC_GEO['width']}x{const.EXC_GEO['height']}+{xpos}+{ypos}")
 
     def _get_ws_list(self):
         db = dbws.DbWorkspace()
