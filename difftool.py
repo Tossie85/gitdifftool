@@ -424,6 +424,7 @@ class GitDiffApp(tk.Tk):
     def update_branches(self):
         """
         ブランチ情報の更新
+        git branchコマンドで取得し、DBに保存する
         """
         if not self.repo_path:
             messagebox.showerror("エラー", "Gitフォルダを選択してください")
@@ -450,18 +451,18 @@ class GitDiffApp(tk.Tk):
     def update_commits(self):
         """
         コミット情報の更新
+        git logコマンドで取得し、DBに保存する
         """
         if not self.repo_path:
             messagebox.showerror("エラー", "Gitフォルダを選択してください")
             return
         try:
-            # 出力フォーマット
+            # 出力フォーマット(%h: ハッシュ, %cd: 日付, %s: サマリ, %an: 作者名)
             foption = f"--pretty=format:%h|||%cd|||%s|||%an"
-            # 日付のフォーマット
+            # 日付のフォーマット(YYYY-MM-DD HH:MM:SS)
             doption = f"--date=format:%Y-%m-%d %H:%M:%S"
             # 取得件数
-            noption = f"-{dbus.DbUserSettings().get_user_setting(const.US_KEY_COMMIT_NUM)}" if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_COMMIT_NUM) else f"-{const.DIFF_FILE_NUM_LIMIT}"
-            print (noption)
+            noption = f"-n {dbus.DbUserSettings().get_user_setting(const.US_KEY_COMMIT_NUM)}" if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_COMMIT_NUM) else f"-n {const.DIFF_FILE_NUM_LIMIT}"
             # 全ブランチ
             boption = f"--all"
             # encodingオプションをつけないとエラーになる（cp932）
