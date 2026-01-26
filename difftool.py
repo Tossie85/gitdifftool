@@ -457,17 +457,28 @@ class GitDiffApp(tk.Tk):
             messagebox.showerror("エラー", "Gitフォルダを選択してください")
             return
         try:
+            command = ["git", "log"]
+            # マージコミット除外設定
+            if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_NO_MERGE):
+                no_merge = dbus.DbUserSettings().get_user_setting(const.US_KEY_NO_MERGE)
+                if int(no_merge) == const.WITHOUT_MERGE_COMMITS:
+                    command.append("--no-merges")        
             # 出力フォーマット(%h: ハッシュ, %cd: 日付, %s: サマリ, %an: 作者名)
             foption = f"--pretty=format:%h|||%cd|||%s|||%an"
+            command.append(foption)
             # 日付のフォーマット(YYYY-MM-DD HH:MM:SS)
             doption = f"--date=format:%Y-%m-%d %H:%M:%S"
+            command.append(doption)
             # 取得件数
             noption = f"-n {dbus.DbUserSettings().get_user_setting(const.US_KEY_COMMIT_NUM)}" if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_COMMIT_NUM) else f"-n {const.DIFF_FILE_NUM_LIMIT}"
+            command.append(noption)
             # 全ブランチ
             boption = f"--all"
+            command.append(boption)
+
             # encodingオプションをつけないとエラーになる（cp932）
             result = subprocess.check_output(
-                ["git", "log", foption, doption, noption, boption],
+                command,
                 cwd=self.repo_path,
                 text=True,
                 encoding="utf-8",
