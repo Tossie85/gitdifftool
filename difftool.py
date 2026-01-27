@@ -459,10 +459,12 @@ class GitDiffApp(tk.Tk):
         try:
             command = ["git", "log"]
             # マージコミット除外設定
-            if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_NO_MERGE):
-                no_merge = dbus.DbUserSettings().get_user_setting(const.US_KEY_NO_MERGE)
-                if int(no_merge) == const.WITHOUT_MERGE_COMMITS:
-                    command.append("--no-merges")        
+            if dbus.DbUserSettings().exists_user_setting_info(const.US_KEY_MERGE_OPTION):
+                merge_option = dbus.DbUserSettings().get_user_setting(const.US_KEY_MERGE_OPTION)
+                if int(merge_option) == const.WITHOUT_MERGE_COMMITS:
+                    command.append("--no-merges")
+                elif int(merge_option) == const.ONLY_MERGE_COMMITS:
+                    command.append("--merges")     
             # 出力フォーマット(%h: ハッシュ, %cd: 日付, %s: サマリ, %an: 作者名)
             foption = f"--pretty=format:%h|||%cd|||%s|||%an"
             command.append(foption)
@@ -489,12 +491,15 @@ class GitDiffApp(tk.Tk):
             for commit in commit_lines:
                 commits.append(commit.split("|||"))
 
-            db = dbco.DbCommit()
-            db.update_commit_logs(self.ws_name, commits)
-            result = db.get_commits(self.ws_name)
-            self.commit1_combo["values"] = result
-            self.commit2_combo["values"] = result
-            self.log_queue.put("コミット一覧を更新しました")
+            if commits:
+                db = dbco.DbCommit()
+                db.update_commit_logs(self.ws_name, commits)
+                result = db.get_commits(self.ws_name)
+                self.commit1_combo["values"] = result
+                self.commit2_combo["values"] = result
+                self.log_queue.put("コミット一覧を更新しました")
+            else:
+                self.log_queue.put("条件に合うコミットが存在しませんでした。ユーザ設定を確認してください。")
         except Exception as e:
             messagebox.showerror("エラー", str(e))
             self.log_queue.put(f"コミットログ取得エラー: {e}")

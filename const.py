@@ -1,14 +1,23 @@
 APP_NAME = 'ぎっとさぶん (diff and copy tool for git project)'
-VERSION = '0.2.8'
+VERSION = '0.2.9'
 
 # 取得する差分コミット数の上限
 DIFF_FILE_NUM_LIMIT = 50
 # 確認対象とする差分ファイル数の上限
 DIFF_FILE_CONFIRM_LINES = 20
+
 # マージコミットを含む
 WITH_MERGE_COMMITS = 0
 # マージコミットを除外する
 WITHOUT_MERGE_COMMITS = 1
+# マージコミットのみ
+ONLY_MERGE_COMMITS = 2
+# マージコミットオプションのラベル
+RADIO_LABELS_MERGE_OPTION = [
+    'すべて',
+    'マージコミット以外',
+    'マージコミットのみ',
+]
 
 LOCAL_CHANGE = 'local_change'
 
@@ -24,7 +33,7 @@ TITLE_USER_SETTINGS = 'ユーザー設定'
 # LABEL
 LABEL_USER_SETTINGS_COMMIT_NUM = '取得する差分コミット数の上限'
 LABEL_USER_SETTINGS_DIFF_FILE_NUM = '確認をせずに実行する差分ファイル数の上限'
-LABEL_USER_SETTINGS_NO_MERGE = 'マージコミットを除外する'
+LABEL_USER_SETTINGS_MERGE_OPTION = 'マージコミットオプション'
 BUTTON_SAVE = '保存'
 
 # user_settingsのキー名
@@ -32,7 +41,7 @@ US_KEY_CURRENT_WS = 'current_workspace'
 US_KEY_DEFAULT_WS = 'default_workspace'
 US_KEY_COMMIT_NUM = 'commit_nums'
 US_KEY_DIFF_FILE_NUM = 'diff_file_confirm_lines'
-US_KEY_NO_MERGE = 'no_merge_commits'
+US_KEY_MERGE_OPTION = 'commit_merge_option'
 
 # 除外パスタイプ
 EXCLUDE_PATH_TYPE_COPY_ONLY = 0 # コピーのみ対象外

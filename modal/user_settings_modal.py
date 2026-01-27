@@ -40,15 +40,36 @@ class UserSettingsModal(tk.Toplevel):
         self.text_diff_file_num = tk.Text(frmDiffFileNum, height=1, width=10)
         self.label_diff_file_num.pack(side=tk.LEFT,fill=tk.X,expand=True, padx=5, pady=2)
         self.text_diff_file_num.pack(side=tk.RIGHT,fill=tk.X,expand=True, padx=5, pady=2)
-        # マージコミット除外設定
-        frmNoMerge = tk.Frame(self)
-        frmNoMerge.pack(fill=tk.X,expand=False)
-        self.is_no_merge_var = tk.IntVar()
-        self.label_no_merge = tk.Label(frmNoMerge, text=const.LABEL_USER_SETTINGS_NO_MERGE,anchor=tk.W,justify=tk.LEFT,width=30)
-        self.checkbox_no_merge = tk.Checkbutton(frmNoMerge, variable=self.is_no_merge_var)
-        self.label_no_merge.pack(side=tk.LEFT,fill=tk.X,expand=True, padx=5, pady=2)
-        self.checkbox_no_merge.pack(side=tk.RIGHT,fill=tk.X,expand=True, padx=5, pady=2)
-        self.text_diff_file_num.pack(side=tk.RIGHT,fill=tk.X,expand=True, padx=5, pady=2)
+
+        # マージコミットオプション
+        frmMergeOption = tk.Frame(self)
+        frmMergeOption.pack(fill=tk.X, expand=False)
+        self.label_merge_option = tk.Label(frmMergeOption, text=const.LABEL_USER_SETTINGS_MERGE_OPTION, anchor=tk.W, justify=tk.LEFT, width=30)
+        self.label_merge_option.pack(side=tk.TOP, fill=tk.X, expand=True, padx=5, pady=2)
+        frmMergeOptionInner = tk.Frame(frmMergeOption) # 内部フレーム(ラジオボタン用)
+        frmMergeOptionInner.pack(side=tk.BOTTOM, anchor=tk.E, expand=False) # ラジオボタン配置用フレーム(ラベルの下に右寄せで配置)
+        self.merge_option = tk.IntVar()
+        self.all_merge_radio = tk.Radiobutton(
+            frmMergeOptionInner,
+            text=const.RADIO_LABELS_MERGE_OPTION[const.WITH_MERGE_COMMITS],
+            variable=self.merge_option,
+            value=const.WITH_MERGE_COMMITS
+        )
+        self.no_merge_radio = tk.Radiobutton(
+            frmMergeOptionInner,
+            text=const.RADIO_LABELS_MERGE_OPTION[const.WITHOUT_MERGE_COMMITS],
+            variable=self.merge_option,
+            value=const.WITHOUT_MERGE_COMMITS
+        )
+        self.only_merge_radio = tk.Radiobutton(
+            frmMergeOptionInner,
+            text=const.RADIO_LABELS_MERGE_OPTION[const.ONLY_MERGE_COMMITS],
+            variable=self.merge_option,
+            value=const.ONLY_MERGE_COMMITS
+        )
+        self.all_merge_radio.pack(side=tk.LEFT, padx=5, pady=2)
+        self.no_merge_radio.pack(side=tk.LEFT, padx=5, pady=2)
+        self.only_merge_radio.pack(side=tk.LEFT, padx=5, pady=2)
         # 保存ボタン
         frmButton = tk.Frame(self)
         frmButton.pack(fill=tk.X, expand=False)
@@ -74,7 +95,7 @@ class UserSettingsModal(tk.Toplevel):
         dbu = dbus.DbUserSettings()
         dbu.update_or_insert_user_settings(const.US_KEY_COMMIT_NUM, commit_nums)
         dbu.update_or_insert_user_settings(const.US_KEY_DIFF_FILE_NUM, diff_file_nums)
-        dbu.update_or_insert_user_settings(const.US_KEY_NO_MERGE, self.is_no_merge_var.get())
+        dbu.update_or_insert_user_settings(const.US_KEY_MERGE_OPTION, self.merge_option.get())
 
         self.destroy()
         self.callback(difftool.CALLBACK_SET_WS)
@@ -92,16 +113,16 @@ class UserSettingsModal(tk.Toplevel):
         else:
             diff_file_nums = const.DIFF_FILE_CONFIRM_LINES
         # マージコミット除外設定
-        if dbu.exists_user_setting_info(const.US_KEY_NO_MERGE):
-            no_merge = dbu.get_user_setting(key=const.US_KEY_NO_MERGE)
+        if dbu.exists_user_setting_info(const.US_KEY_MERGE_OPTION):
+            merge_option = dbu.get_user_setting(key=const.US_KEY_MERGE_OPTION)
         else:
-            no_merge = const.WITH_MERGE_COMMITS
+            merge_option = const.WITH_MERGE_COMMITS
 
         self.text_commit_num.delete("1.0", tk.END)
         self.text_commit_num.insert("1.0", str(commit_nums))
         self.text_diff_file_num.delete("1.0", tk.END)  
         self.text_diff_file_num.insert("1.0", str(diff_file_nums))
-        self.is_no_merge_var.set(no_merge)
+        self.merge_option.set(merge_option)
 
     def _click_close(self):
         """
