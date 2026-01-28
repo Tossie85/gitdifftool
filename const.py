@@ -1,5 +1,6 @@
 APP_NAME = 'ぎっとさぶん (diff and copy tool for git project)'
-VERSION = '0.2.9'
+VERSION = '0.2.10'
+
 
 # 取得する差分コミット数の上限
 DIFF_FILE_NUM_LIMIT = 50

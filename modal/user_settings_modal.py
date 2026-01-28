@@ -98,7 +98,7 @@ class UserSettingsModal(tk.Toplevel):
         dbu.update_or_insert_user_settings(const.US_KEY_MERGE_OPTION, self.merge_option.get())
 
         self.destroy()
-        self.callback(difftool.CALLBACK_SET_WS)
+        self.callback(difftool.CALLBACK_SET_US)
 
     def _load_settings(self):
         dbu = dbus.DbUserSettings()
@@ -129,4 +129,4 @@ class UserSettingsModal(tk.Toplevel):
         バツボタンクリックイベント
         """
         self.destroy()
-        self.callback(difftool.CALLBACK_UNSET_WS)
+        self.callback(difftool.CALLBACK_UNSET_US)

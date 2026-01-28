@@ -18,15 +18,18 @@ import modal.ws_modal as ws_modal
 import modal.copy_ignore_list_modal as copy_ignore_list_modal
 import const
 
+# コールバック定数
 CALLBACK_SELECTED_WS = "selected_ws"
 CALLBACK_UNSELECTED_WS = "unselected_ws"
 CALLBACK_SET_WS = "set_ws"
 CALLBACK_UNSET_WS = "unset_ws"
+CALLBACK_SET_US = "set_us"
+CALLBACK_UNSET_US = "unset_us"
 
+# 比較方法定数
 SELECT_DIFF_BRANCH = 0
 SELECT_DIFF_COMMIT = 1
 SELECT_DIFF_PRECOMMIT = 2
-
 
 class GitDiffApp(tk.Tk):
     def __init__(self):
@@ -375,9 +378,9 @@ class GitDiffApp(tk.Tk):
         """
         ユーザー設定モーダルコールバック
         """
-        if value == CALLBACK_SET_WS:
+        if value == CALLBACK_SET_US:
             self.log_queue.put(f"インフォ - :ユーザー設定完了")
-        if value == CALLBACK_UNSET_WS:
+        if value == CALLBACK_UNSET_US:
             self.log_queue.put(f"インフォ - :ユーザー設定キャンセル")
 
     def log(self, message):
