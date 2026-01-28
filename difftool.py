@@ -727,7 +727,7 @@ class GitDiffApp(tk.Tk):
             self.paused.wait()  # 一時停止中はここで待機
             # 除外対象はスキップ
             if any(ex in path for ex in exclude_path):
-                self.log_queue.put(f"スキップ - :除外対象文字列含む({path})")
+                self.log_queue.put(f"{const.LOCAL_CHANGE}: スキップ - :除外対象文字列含む({path})")
                 continue
             from_path = os.path.join(self.repo_path, path)
             target_file = os.path.join(self.diff_dir, const.LOCAL_CHANGE, path)
@@ -767,7 +767,7 @@ class GitDiffApp(tk.Tk):
                 exclude_path += const.EXCEPT_PATH
                 # 除外対象はスキップ
                 if any(ex in rel_path for ex in exclude_path):
-                    self.log_queue.put(f"スキップ - :除外対象文字列含む({rel_path})")
+                    self.log_queue.put(f"{commit}: スキップ - :除外対象文字列含む({rel_path})")
                     continue
 
                 try:
@@ -802,6 +802,8 @@ class GitDiffApp(tk.Tk):
     def checkout_and_copy(self, branch, diff_file):
         """
         ブランチを切り替えて差分ファイル記載のファイルをコピー
+        deprecated : 現在はfile_copy_from_commitを使用
+        しているため使用していない
         """
         safe_branch = re.sub(r"[^\w.-]", "-", branch)
         branch_dir = os.path.join(self.diff_dir, safe_branch)

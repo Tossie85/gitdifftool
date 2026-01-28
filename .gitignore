@@ -4,4 +4,3 @@ settings.json
 git_tool.db
 __pycache__
 build/
-gitdifftool.exe.spec
