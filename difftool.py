@@ -128,103 +128,148 @@ class GitDiffApp(tk.Tk):
         """
         ウィジットを生成する
         """
-        tk.Label(self, text="gitフォルダ", width=12).grid(
-            row=0, column=0, padx=5, pady=2
+        # Gitフォルダフレーム
+        frmSelectGitFolder = tk.Frame(self)
+        frmSelectGitFolder.pack(fill=tk.X, expand=False)
+        labelSelectGitFolder = tk.Label(frmSelectGitFolder, text="Gitフォルダ:", width=12)
+        labelSelectGitFolder.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=2)
+        self.git_folder_entry = tk.Entry(frmSelectGitFolder, width=76)
+        self.git_folder_entry.pack(side=tk.LEFT, padx=5, pady=2)
+        self.select_git_folder_button = tk.Button(
+            frmSelectGitFolder, text="選択", command=self.select_git_folder, width=10
         )
-        # gitフォルダ選択テキスト
-        self.git_folder_entry = tk.Entry(self, width=74)
-        self.git_folder_entry.grid(row=0, column=1, columnspan=5, padx=5, pady=2)
+        self.select_git_folder_button.pack(side=tk.RIGHT, padx=5, pady=2)
         
-        # gitフォルダ選択ボタン
-        self.select_git_folder_button = tk.Button(self, text="選択", command=self.select_git_folder, width=10)
-        self.select_git_folder_button.grid(row=0, column=6, padx=5, pady=2)
-
-        tk.Label(self, text="出力フォルダ", width=12).grid(row=1, column=0, padx=5, pady=2)
-
-        # 出力先フォルダ選択テキスト
-        self.output_folder_entry = tk.Entry(self, width=74)
-        self.output_folder_entry.grid(row=1, column=1, columnspan=5, padx=5, pady=2)
-        # 出力先フォルダ選択ボタン
-        self.select_output_folder_button = tk.Button(self, text="選択", command=self.select_output_folder, width=10)
-        self.select_output_folder_button.grid(row=1, column=6, padx=5, pady=2)
-
-        tk.Label(self, text="ブランチ情報", width=12).grid(
-            row=3, column=0, padx=5, pady=2
+        # 出力フォルダフレーム
+        frmSelectOutputFolder = tk.Frame(self)
+        frmSelectOutputFolder.pack(fill=tk.X, expand=False)
+        labelOutputFolder = tk.Label(frmSelectOutputFolder, text="出力フォルダ:", width=12)
+        labelOutputFolder.pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=2)
+        self.output_folder_entry = tk.Entry(frmSelectOutputFolder, width=76)
+        self.output_folder_entry.pack(side=tk.LEFT, padx=5, pady=2)
+        self.select_output_folder_button = tk.Button(
+            frmSelectOutputFolder, text="選択", command=self.select_output_folder, width=10
         )
-        self.branch1_combo = ttk.Combobox(self, width=74)
-        self.branch1_combo.grid(row=3, column=1, columnspan=5, padx=5, pady=2)
-        self.branch2_combo = ttk.Combobox(self, width=74)
-        self.branch2_combo.grid(row=4, column=1, columnspan=5, padx=5, pady=2)
-        # ブランチ更新ボタン
-        self.update_branch_button = tk.Button(self, text="ブランチ更新", command=self.update_branches, height=2, width=10)
-        self.update_branch_button.grid(row=3, column=6, rowspan=2, padx=5, pady=2)
-
-        tk.Label(self, text="コミット情報", width=12).grid(row=5, column=0, padx=5, pady=2)
+        self.select_output_folder_button.pack(side=tk.RIGHT, padx=5, pady=2)
         
-        self.commit1_combo = ttk.Combobox(self, width=74)
-        self.commit1_combo.grid(row=5, column=1, columnspan=5, padx=5, pady=2)
-        self.commit2_combo = ttk.Combobox(self, width=74)
-        self.commit2_combo.grid(row=6, column=1, columnspan=5, padx=5, pady=2)
-        # コミット更新ボタン
+        # ブランチ情報フレーム
+        frmBranchInfo = tk.Frame(self)
+        frmBranchInfo.pack(fill=tk.X, expand=False)
+
+        tk.Label(frmBranchInfo, text="ブランチ情報:", width=12).pack(side=tk.LEFT, anchor=tk.NW, padx=5, pady=3)
+        
+        frmBranchInfoInner = tk.Frame(frmBranchInfo)
+        frmBranchInfoInner.pack(side=tk.LEFT, padx=0, pady=0)
+        
+        frmBranchInfo1Inner = tk.Frame(frmBranchInfoInner)
+        frmBranchInfo1Inner.pack(side=tk.TOP, padx=0, pady=0)
+        self.branch1_combo = ttk.Combobox(frmBranchInfo1Inner, width=62)
+        self.branch1_combo.pack(side=tk.LEFT, padx=5, pady=2)
+        self.remote_branch_var1 = tk.BooleanVar()
+        self.remote_branch_var1.set(False)
+        self.remote_branch1_check = tk.Checkbutton(
+            frmBranchInfoInner, text="リモート", variable=self.remote_branch_var1
+        )
+        self.remote_branch1_check.pack(side=tk.LEFT, after=self.branch1_combo, padx=5, pady=2)
+
+        frmBranchInfo2Inner = tk.Frame(frmBranchInfoInner)
+        frmBranchInfo2Inner.pack(side=tk.TOP, padx=0, pady=0)
+        self.branch2_combo = ttk.Combobox(frmBranchInfo2Inner, width=62)
+        self.branch2_combo.pack(side=tk.LEFT, padx=5, pady=2)
+        self.remote_branch_var2 = tk.BooleanVar()
+        self.remote_branch_var2.set(False)
+        self.remote_branch2_check = tk.Checkbutton(
+            frmBranchInfoInner, text="リモート", variable=self.remote_branch_var2
+        )
+        self.remote_branch2_check.pack(side=tk.LEFT, after=self.branch2_combo, padx=5, pady=2)
+        self.update_branch_button = tk.Button(
+            frmBranchInfo, text="ブランチ更新", command=self.update_branches, height=2, width=10
+        )
+        self.update_branch_button.pack(side=tk.RIGHT, padx=5, pady=2)
+
+        # コミット情報フレーム
+        frmCommitInfo = tk.Frame(self)
+        frmCommitInfo.pack(fill=tk.X, expand=False)
+        tk.Label(frmCommitInfo, text="コミット情報:", width=12).pack(side=tk.LEFT, anchor=tk.NW, padx=5, pady=3)
+        frmCommitInfoInner = tk.Frame(frmCommitInfo)
+        frmCommitInfoInner.pack(side=tk.LEFT, padx=0, pady=0)
+        self.commit1_combo = ttk.Combobox(frmCommitInfoInner, width=74)
+        self.commit1_combo.pack(side=tk.TOP, padx=5, pady=2)
+        self.commit2_combo = ttk.Combobox(frmCommitInfoInner, width=74)
+        self.commit2_combo.pack(side=tk.TOP, padx=5, pady=2)
         self.update_commit_button = tk.Button(
-            self, text="コミット更新", command=self.update_commits, height=2, width=10
+            frmCommitInfo, text="コミット更新", command=self.update_commits, height=2, width=10
         )
-        self.update_commit_button.grid(row=5, column=6, rowspan=2, padx=5, pady=2)
+        self.update_commit_button.pack(side=tk.RIGHT, padx=5, pady=2)
 
+        # 比較方法選択フレーム
+        frmSelectCompareWay = tk.Frame(self)
+        frmSelectCompareWay.pack(fill=tk.X, expand=False)
+        tk.Label(frmSelectCompareWay, text="比較方法:", width=12).pack(side=tk.LEFT, anchor=tk.W, padx=5, pady=2)
         self.diff_radio_value = tk.IntVar(value=SELECT_DIFF_BRANCH)
-        tk.Label(self, text="比較", width=12).grid(row=7, column=0, padx=5, pady=2)
-        
         self.branch_radio = ttk.Radiobutton(
-            self,
+            frmSelectCompareWay,
             text="ブランチ間比較",
             value=SELECT_DIFF_BRANCH,
             variable=self.diff_radio_value,
         )
-        self.branch_radio.grid(row=7, column=1, padx=5, pady=2)
-        
+        self.branch_radio.pack(side=tk.LEFT, padx=5, pady=2)
         self.commit_radio = ttk.Radiobutton(
-            self,
+            frmSelectCompareWay,
             text="コミット間比較",
             value=SELECT_DIFF_COMMIT,
             variable=self.diff_radio_value,
         )
-        self.commit_radio.grid(row=7, column=2, padx=5, pady=2)
-
+        self.commit_radio.pack(side=tk.LEFT, padx=5, pady=2)
         self.uncommitted_radio = ttk.Radiobutton(
-            self,
+            frmSelectCompareWay,
             text="未コミット比較",
             value=SELECT_DIFF_PRECOMMIT,
             variable=self.diff_radio_value,
         )
-        self.uncommitted_radio.grid(row=7, column=3, padx=5, pady=2)
-        # 一時停止ボタン
-        self.pause_button = tk.Button(self, text="一時停止", command=self.pause, width=10)
-        self.pause_button.grid(row=8, column=1, padx=5, pady=2)    
-        # 再開ボタン
-        self.restart_button = tk.Button(self, text="再開", command=self.resume, width=10)
-        self.restart_button.grid(row=8, column=2, padx=5, pady=2)
-        # 停止ボタン
-        self.stop_button = tk.Button(self, text="中断", command=self.stop, width=10)
-        self.stop_button.grid(row=8, column=3, padx=5, pady=2)
-        # 実行ボタン
-        self.execute_button = tk.Button(self, text="実行", command=self.execute, width=10)
-        self.execute_button.grid(row=8, column=6, padx=5, pady=2)
+        self.uncommitted_radio.pack(side=tk.LEFT, padx=5, pady=2)
 
+        # 実行ボタンフレーム
+        frmExecuteButtons = tk.Frame(self)
+        frmExecuteButtons.pack(fill=tk.X, expand=False)
+        self.execute_button = tk.Button(
+            frmExecuteButtons, text="実行", command=self.execute, width=10
+        )
+        self.execute_button.pack(side=tk.RIGHT, padx=5, pady=2)
+        self.stop_button = tk.Button(
+            frmExecuteButtons, text="中断", command=self.stop, width=10
+        )
+        self.stop_button.pack(side=tk.RIGHT, padx=(5,20), pady=2)
+        self.restart_button = tk.Button(
+            frmExecuteButtons, text="再開", command=self.resume, width=10
+        )
+        self.restart_button.pack(side=tk.RIGHT, padx=5, pady=2)
+        self.pause_button = tk.Button(
+            frmExecuteButtons, text="一時停止", command=self.pause, width=10
+        )
+        self.pause_button.pack(side=tk.RIGHT, padx=5, pady=2)
+
+        frmLogArea = tk.Frame(self)
+        frmLogArea.pack(fill=tk.BOTH, expand=True)
         # ログ表示（リアルタイム追記用）
-        self.log_text = scrolledtext.ScrolledText(self, height=20, state="disabled")
-        self.log_text.grid(row=9, column=0, columnspan=7, padx=5, pady=2)
+        self.log_text = scrolledtext.ScrolledText(frmLogArea, height=20, state="disabled")
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=2)
 
-        # 結果を開くボタン
-        self.show_result_button = tk.Button(self, text="結果を開く", command=self.open_result, width=10)
-        self.show_result_button.grid(row=10, column=0, padx=5, pady=2)
-
-        # ログクリアボタン
-        self.clear_log_button = tk.Button(self, text="ログクリア", command=self.clear_log, width=10)
-        self.clear_log_button.grid(row=10, column=5, padx=5, pady=2)
-
-        # ログ保存ボタン
-        self.save_log_button = tk.Button(self, text="ログ保存", command=self.save_log, width=10)
-        self.save_log_button.grid(row=10, column=6, padx=5, pady=2)
+        # ログ操作ボタンフレーム
+        frmLogButtons = tk.Frame(self)
+        frmLogButtons.pack(fill=tk.X, expand=False, pady=5)
+        self.show_result_button = tk.Button(
+            frmLogButtons, text="結果を開く", command=self.open_result, width=10
+        )
+        self.show_result_button.pack(side=tk.LEFT, padx=5, pady=2)
+        self.clear_log_button = tk.Button(
+            frmLogButtons, text="ログクリア", command=self.clear_log, width=10
+        )
+        self.clear_log_button.pack(side=tk.RIGHT, padx=5, pady=2)
+        self.save_log_button = tk.Button(
+            frmLogButtons, text="ログ保存", command=self.save_log, width=10
+        )
+        self.save_log_button.pack(side=tk.RIGHT, padx=5, pady=2)
 
         # メニューの設定
         self.create_menus()
@@ -543,7 +588,7 @@ class GitDiffApp(tk.Tk):
                 raise ValueError("出力フォルダが無効です")
             diff_ways = self.diff_radio_value.get()
             if diff_ways == SELECT_DIFF_BRANCH:
-                if branch1 == branch2:
+                if branch1 == branch2 and self.remote_branch_var2.get() == self.remote_branch_var1.get():
                     raise ValueError("異なるブランチを選択してください")
             elif diff_ways == SELECT_DIFF_COMMIT:
                 if commit1 == commit2:
@@ -559,7 +604,9 @@ class GitDiffApp(tk.Tk):
                 diff_file = os.path.join(
                     self.diff_dir, f"diff_{safe_branch1}_{safe_branch2}.txt"
                 )
-                diff1, diff2 = branch1, branch2
+                remote = self._get_remote_repository_name()
+                diff1 = remote + "/" + branch1 if self.remote_branch_var1.get() else branch1
+                diff2 = remote + "/" + branch2 if self.remote_branch_var2.get() else branch2
             elif diff_ways == SELECT_DIFF_COMMIT:
                 safe_commit1 = commit1[:7].split()
                 safe_commit2 = commit2[:7].split()
@@ -572,7 +619,6 @@ class GitDiffApp(tk.Tk):
 
             # 重い処理は別スレッドで実行
             if diff_ways != SELECT_DIFF_PRECOMMIT:
-                print(diff_file)
                 threading.Thread(
                     target=self._execute_worker,
                     args=(diff1, diff2, diff_file),
@@ -915,6 +961,23 @@ class GitDiffApp(tk.Tk):
                 return False
             return True
         return True
+    
+    def _get_remote_repository_name(self):
+        """
+        リモートリポジトリ名を取得
+        """
+        try:
+            result = subprocess.check_output(
+                ["git", "remote"],
+                cwd=self.repo_path,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            return result.strip()
+        except Exception as e:
+            messagebox.showerror("エラー", str(e))
+            self.log_queue.put(f"リモートリポジトリ名取得エラー: {e}")
+            return ""
 
 if __name__ == "__main__":
     app = GitDiffApp()
