@@ -54,6 +54,7 @@ class SettingCopyIgnoreListModal(tk.Toplevel):
         ws_name = dbu.get_user_setting(key=const.US_KEY_CURRENT_WS)
         
         if ws_name != "":
+            self.title(f"{const.APP_NAME}：{const.TITLE_EXCLUDE_SETTING}:[{ws_name}]")
             db = dbexp.DbExcludedPath()
             excludes = db.get_excluded_paths(ws_name)
             for ex in excludes:

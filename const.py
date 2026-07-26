@@ -32,8 +32,8 @@ TITLE_EXCLUDE_SETTING = 'コピー対象外設定'
 TITLE_SELECT_WORKSPACE = 'ワークスペース選択'
 TITLE_USER_SETTINGS = 'ユーザー設定'
 # LABEL
-LABEL_USER_SETTINGS_COMMIT_NUM = '取得する差分コミット数の上限'
-LABEL_USER_SETTINGS_DIFF_FILE_NUM = '確認をせずに実行する差分ファイル数の上限'
+LABEL_USER_SETTINGS_COMMIT_NUM = '取得するコミット数の上限'
+LABEL_USER_SETTINGS_DIFF_FILE_NUM = '比較前アラートを表示する差分ファイル数閾値'
 LABEL_USER_SETTINGS_MERGE_OPTION = 'マージコミットオプション'
 BUTTON_SAVE = '保存'
 

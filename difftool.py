@@ -478,12 +478,17 @@ class GitDiffApp(tk.Tk):
             messagebox.showerror("エラー", "Gitフォルダを選択してください")
             return
         try:
-            result = subprocess.check_output(
+            proc = subprocess.run(
                 ["git", "branch"],
                 cwd=self.repo_path,
                 text=True,
+                encoding="utf-8",
+                capture_output=True,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
+            if proc.returncode != 0:
+                raise RuntimeError(proc.stderr.strip() or f"git branch failed (exit {proc.returncode})")
+            result = proc.stdout
             branches = [
                 line.strip().lstrip("* ").strip() for line in result.splitlines()
             ]
@@ -971,6 +976,7 @@ class GitDiffApp(tk.Tk):
                 ["git", "remote"],
                 cwd=self.repo_path,
                 text=True,
+                encoding="utf-8",
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
             return result.strip()

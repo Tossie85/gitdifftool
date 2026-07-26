@@ -72,7 +72,7 @@ class DbUserSettings(dbs.DbBase):
         finally:
             conn.close()
         # 結果を真理値で返す
-        if result[0]:
+        if result and result[0]:
             return True
         else:
             return False
